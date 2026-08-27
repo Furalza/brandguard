@@ -1,0 +1,287 @@
+[
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.mobil",
+      "source": "google_play",
+      "name": "Örnek Bank Mobil",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-05-14", "other_app_count": 6, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Örnek Bank Mobil ile hesaplarınıza her yerden ulaşın, para transferi yapın, fatura ödeyin.",
+      "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC", "ACCESS_FINE_LOCATION", "READ_CONTACTS"],
+      "downloads": 5000000,
+      "rating": 4.3,
+      "review_count": 182000,
+      "published": "2013-02-01",
+      "last_updated": "2026-08-10",
+      "version": "9.4.1"
+    },
+    "label": "official",
+    "layer": "L1",
+    "rationale": "Exact official name, official publisher, official package id."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.kurumsal",
+      "source": "google_play",
+      "name": "Örnek Bank Kurumsal",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-05-14", "other_app_count": 6, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Kurumsal müşterilerimiz için internet bankacılığı ve onay işlemleri.",
+      "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC"],
+      "downloads": 500000,
+      "rating": 4.0,
+      "review_count": 9100,
+      "published": "2015-09-20",
+      "last_updated": "2026-07-28",
+      "version": "5.2.0"
+    },
+    "label": "official",
+    "layer": "L1",
+    "rationale": "Second known official app, official publisher and package id."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.mobil",
+      "source": "apple_app_store",
+      "name": "Örnek Bank Mobil",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-06-02", "other_app_count": 5, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Örnek Bank Mobil ile hesaplarınıza her yerden ulaşın.",
+      "permissions": [],
+      "downloads": null,
+      "rating": 4.5,
+      "review_count": 61000,
+      "published": "2013-02-05",
+      "last_updated": "2026-08-10",
+      "version": "9.4.1"
+    },
+    "label": "official",
+    "layer": "L1",
+    "rationale": "Same official app on a second store. Downloads and permissions unavailable from this source; must not be penalised."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.cuzdan",
+      "source": "google_play",
+      "name": "ÖrnekPay Cüzdan",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-05-14", "other_app_count": 6, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Kartsız ödeme, QR ile ödeme ve dijital cüzdan.",
+      "permissions": ["INTERNET", "CAMERA", "NFC", "USE_BIOMETRIC"],
+      "downloads": 1000000,
+      "rating": 4.1,
+      "review_count": 24000,
+      "published": "2019-11-12",
+      "last_updated": "2026-08-01",
+      "version": "3.8.0"
+    },
+    "label": "official",
+    "layer": "L2",
+    "rationale": "Ecosystem app: name is a sub-brand not in known_official_apps and package id is not in the official list, but publisher is official. Publisher veto must win."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.yatirim",
+      "source": "google_play",
+      "name": "Örnek Yatırım",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-05-14", "other_app_count": 6, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Hisse, fon ve döviz işlemleri için yatırım uygulaması.",
+      "permissions": ["INTERNET", "USE_BIOMETRIC", "READ_PHONE_STATE"],
+      "downloads": 100000,
+      "rating": 3.9,
+      "review_count": 3300,
+      "published": "2021-03-30",
+      "last_updated": "2026-06-15",
+      "version": "2.1.4"
+    },
+    "label": "official",
+    "layer": "L2",
+    "rationale": "Ecosystem app with a permission (READ_PHONE_STATE) outside the official set. Permission drift must not override publisher match."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.mobil.beta",
+      "source": "google_play",
+      "name": "Örnek Bank Mobil (Beta)",
+      "publisher": {"name": "Örnek Bank Teknoloji A.Ş.", "account_created": "2018-01-22", "other_app_count": 2, "website": "https://tech.ornekbank.com.tr", "verified": true},
+      "description": "Yeni özellikleri erken deneyin. Örnek Bank teknoloji iştiraki tarafından yayınlanır.",
+      "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC", "ACCESS_FINE_LOCATION"],
+      "downloads": 10000,
+      "rating": 3.6,
+      "review_count": 210,
+      "published": "2024-05-02",
+      "last_updated": "2026-08-20",
+      "version": "9.5.0-beta"
+    },
+    "label": "official",
+    "layer": "L2",
+    "rationale": "Published by a subsidiary, not the listed publisher, but website is under the official domain and publisher is verified. Hard case: name similarity is maximal."
+  },
+  {
+    "record": {
+      "app_id": "com.fintechkarsilastir.app",
+      "source": "google_play",
+      "name": "Kredi Karşılaştır: Örnek Bank, Diğer Bankalar",
+      "publisher": {"name": "Fintech Karşılaştır Ltd.", "account_created": "2017-08-09", "other_app_count": 4, "website": "https://fintechkarsilastir.com", "verified": false},
+      "description": "Örnek Bank dahil 20+ bankanın kredi faiz oranlarını karşılaştırın. Bu uygulama bir banka değildir, hesap bilgisi istemez.",
+      "permissions": ["INTERNET"],
+      "downloads": 500000,
+      "rating": 4.2,
+      "review_count": 7800,
+      "published": "2018-02-14",
+      "last_updated": "2026-05-30",
+      "version": "4.0.2"
+    },
+    "label": "third_party_legitimate",
+    "layer": "L8",
+    "rationale": "Mentions the brand alongside competitors, describes itself as a comparison tool, minimal permissions, established publisher."
+  },
+  {
+    "record": {
+      "app_id": "com.butcem.hesaptopla",
+      "source": "google_play",
+      "name": "Hesap Topla",
+      "publisher": {"name": "Butcem Yazilim", "account_created": "2016-11-03", "other_app_count": 3, "website": "https://butcem.app", "verified": false},
+      "description": "Örnek Bank, ve diğer bankalardaki hesaplarınızı tek ekranda görün. Açık bankacılık API ile çalışır.",
+      "permissions": ["INTERNET", "USE_BIOMETRIC"],
+      "downloads": 200000,
+      "rating": 4.0,
+      "review_count": 4100,
+      "published": "2020-06-18",
+      "last_updated": "2026-07-03",
+      "version": "2.9.1"
+    },
+    "label": "third_party_legitimate",
+    "layer": "L8",
+    "rationale": "Account aggregator via open banking. Brand mentioned only in description, name has no overlap. Legitimate but touches financial data, so a naive permission or keyword rule could flag it."
+  },
+  {
+    "record": {
+      "app_id": "com.ornekbank.sdk.sample",
+      "source": "github_releases",
+      "name": "Örnek Bank API Sample",
+      "publisher": {"name": "ornekbank-dev", "account_created": null, "other_app_count": null, "website": "https://developer.ornekbank.com.tr", "verified": null},
+      "description": "Sample integration app for the Örnek Bank open banking API. For developers.",
+      "permissions": ["INTERNET"],
+      "downloads": null,
+      "rating": null,
+      "review_count": null,
+      "published": "2023-04-11",
+      "last_updated": "2026-02-20",
+      "version": "1.2.0"
+    },
+    "label": "third_party_legitimate",
+    "layer": "L8",
+    "rationale": "Developer sample from a non-store source. Most signals are absent. Website on official domain suggests sanctioned, but publisher name does not match; not claiming to be the bank app."
+  },
+  {
+    "record": {
+      "app_id": "com.subeyakin.ornekbank",
+      "source": "google_play",
+      "name": "Örnek Bank Şube ve ATM Bul",
+      "publisher": {"name": "Yakin Bul Apps", "account_created": "2019-02-27", "other_app_count": 11, "website": null, "verified": false},
+      "description": "En yakın Örnek Bank şubesini ve ATM'sini harita üzerinde bulun. Resmi uygulama değildir.",
+      "permissions": ["INTERNET", "ACCESS_FINE_LOCATION"],
+      "downloads": 50000,
+      "rating": 3.7,
+      "review_count": 900,
+      "published": "2019-03-15",
+      "last_updated": "2025-12-01",
+      "version": "1.6.3"
+    },
+    "label": "third_party_legitimate",
+    "layer": "L8",
+    "rationale": "Name starts with the brand, which is exactly what impersonation looks like, but the app is a locator with a disclaimer and no financial permissions. Rule 3 vs rule 4 boundary case."
+  },
+  {
+    "record": {
+      "app_id": "com.ornekoyun.match3",
+      "source": "google_play",
+      "name": "Örnek Oyun: Meyve Patlat",
+      "publisher": {"name": "Ornek Oyun Studio", "account_created": "2020-09-01", "other_app_count": 9, "website": null, "verified": false},
+      "description": "Eğlenceli meyve eşleştirme oyunu. Yüzlerce bölüm.",
+      "permissions": ["INTERNET", "VIBRATE"],
+      "downloads": 1000000,
+      "rating": 4.4,
+      "review_count": 31000,
+      "published": "2020-10-10",
+      "last_updated": "2026-08-15",
+      "version": "7.3.0"
+    },
+    "label": "unrelated",
+    "layer": "L9",
+    "rationale": "Shares the token 'Örnek' only. Different sector, no brand reference in description."
+  },
+  {
+    "record": {
+      "app_id": "com.bankamatik.rehber",
+      "source": "google_play",
+      "name": "Bankamatik Rehberi",
+      "publisher": {"name": "Rehber Uygulamalari", "account_created": "2018-04-19", "other_app_count": 15, "website": null, "verified": false},
+      "description": "Tüm bankaların ATM'lerini listeleyen rehber.",
+      "permissions": ["INTERNET", "ACCESS_COARSE_LOCATION"],
+      "downloads": 100000,
+      "rating": 3.5,
+      "review_count": 1200,
+      "published": "2018-05-01",
+      "last_updated": "2024-11-11",
+      "version": "3.0.0"
+    },
+    "label": "unrelated",
+    "layer": "L9",
+    "rationale": "Banking sector, matched by a 'bank' query, but no reference to the brand at all."
+  },
+  {
+    "record": {
+      "app_id": "com.ornek.dil",
+      "source": "google_play",
+      "name": "Örnek Cümleler: İngilizce",
+      "publisher": {"name": "Dil Kutusu", "account_created": "2021-01-05", "other_app_count": 2, "website": null, "verified": false},
+      "description": "Günlük İngilizce örnek cümleler ve alıştırmalar.",
+      "permissions": ["INTERNET"],
+      "downloads": 50000,
+      "rating": 4.6,
+      "review_count": 800,
+      "published": "2021-02-01",
+      "last_updated": "2026-03-03",
+      "version": "2.2.1"
+    },
+    "label": "unrelated",
+    "layer": "L9",
+    "rationale": "'Örnek' is a common Turkish word (example). Pure query noise."
+  },
+  {
+    "record": {
+      "app_id": "com.ornekbank.mobile",
+      "source": "apkmirror",
+      "name": "Ornek Bank Mobile",
+      "publisher": {"name": "Ornek Bank", "account_created": null, "other_app_count": null, "website": null, "verified": null},
+      "description": "Ornek Bank Mobile banking.",
+      "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC", "ACCESS_FINE_LOCATION", "READ_CONTACTS"],
+      "downloads": 3200,
+      "rating": null,
+      "review_count": null,
+      "published": "2026-08-19",
+      "last_updated": "2026-08-19",
+      "version": "9.4.1"
+    },
+    "label": "uncertain",
+    "layer": "L10",
+    "rationale": "Third-party mirror listing. Publisher name close to official but not exact, no account metadata, permissions and version identical to official. Could be an untouched mirror of the real APK or a repack; signature data would decide and is not available."
+  },
+  {
+    "record": {
+      "app_id": "tr.com.ornekbank.mobil",
+      "source": "google_play",
+      "name": "Örnek Bank Mobil",
+      "publisher": {"name": "Örnek Bank A.Ş.", "account_created": "2012-05-14", "other_app_count": 6, "website": "https://www.ornekbank.com.tr", "verified": true},
+      "description": "Örnek Bank Mobil ile hesaplarınıza her yerden ulaşın.",
+      "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC", "ACCESS_FINE_LOCATION", "READ_CONTACTS", "READ_SMS", "RECEIVE_SMS"],
+      "downloads": 5000000,
+      "rating": 4.3,
+      "review_count": 182000,
+      "published": "2013-02-01",
+      "last_updated": "2026-08-27",
+      "version": "9.5.0"
+    },
+    "label": "official",
+    "layer": "L10",
+    "rationale": "Official listing after an update that adds SMS permissions. Publisher veto makes it official, but the drift should surface as an evidence line for the analyst (sleeper update pattern from the threat model)."
+  }
+]
