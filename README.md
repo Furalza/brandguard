@@ -28,6 +28,7 @@ Analyst output  { label, confidence, evidence[] }
 
 - `docs/THREAT_MODEL.md` - why each signal carries the weight it does
 - `docs/PLAN.md` - work plan and what gets cut first under time pressure
+- `docs/EVALUATION_SET.md` - how the evaluation set is built and labelled
 - `KARARLAR.md` - decision log, abandoned experiments, known weaknesses
 
 ## Setup

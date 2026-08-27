@@ -1,0 +1,9 @@
+{
+  "brand_name": "Örnek Bank",
+  "official_domains": ["ornekbank.com.tr"],
+  "official_publishers": ["Örnek Bank A.Ş."],
+  "known_official_apps": ["Örnek Bank Mobil", "Örnek Bank Kurumsal"],
+  "sector": "banking",
+  "official_package_ids": ["tr.com.ornekbank.mobil", "tr.com.ornekbank.kurumsal"],
+  "official_permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC", "ACCESS_FINE_LOCATION", "READ_CONTACTS"]
+}

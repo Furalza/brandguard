@@ -1,0 +1,9 @@
+{
+  "brand_name": "Hızlı Kargo",
+  "official_domains": ["hizlikargo.com.tr"],
+  "official_publishers": ["Hızlı Kargo Lojistik A.Ş."],
+  "known_official_apps": ["Hızlı Kargo", "Hızlı Kargo Kurye"],
+  "sector": "logistics",
+  "official_package_ids": ["com.hizlikargo.app", "com.hizlikargo.courier"],
+  "official_permissions": null
+}
