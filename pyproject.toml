@@ -9,6 +9,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.4"]
+llm = ["anthropic>=0.40"]
 
 [build-system]
 requires = ["setuptools>=68"]
