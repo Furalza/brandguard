@@ -85,6 +85,14 @@ Decision: is_noise = jaro_winkler < 0.60 and brand not contained. Verified on th
 Rationale: A cheap filter is only safe if it provably costs no recall. The check is part of the test suite intent and re-run whenever the set changes.
 Status: active
 
+## K-011: Bounded query expansion with measured coverage
+Context: Literal marketplace search misses altered names. Expansion must widen recall without exploding into thousands of noise terms.
+Decision: expand() produces deduplicated queries across strategies (exact, normalized, homoglyph, turkish, leet, typosquat, spacing, suffix), each capped. For the bank profile this yields ~43 queries.
+Rationale: Coverage measured on the evaluation set: without leet, 90% of impersonation/repackaged surfaced; adding a small high-confidence leet map (0,1,3,4,5,7,8,9) closed the last miss ("ornek 8ank") for only four extra queries, reaching 100%. The cost/benefit was measured, not assumed.
+Rejected and why: Unbounded typo generation - thousands of terms, mostly noise no store indexes and no attacker uses. Digit substitution beyond high-confidence swaps - poor cost/benefit.
+Known limit: coverage is measured against a substring model of search, not a live engine; real recall depends on store indexing.
+Status: active
+
 ---
 
 # Tried and Abandoned
