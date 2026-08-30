@@ -108,6 +108,14 @@ Rationale: Field mapping is source-specific and belongs in the adapter; value fo
 Rejected and why: Per-source parsers with copied conversion code - drift and duplicated bugs. A single mega-parser with if/source branches - unreadable and hard to extend.
 Status: active
 
+## K-014: Veto trusts publisher identity, not publisher name (defense in depth)
+Context: The first veto matched publisher names on normalized forms. Testing on our own set, an impersonator set its publisher name to the flattened official name ("Ornek Bank A.S" == "Örnek Bank A.Ş." after normalization) and was wrongly forced to official. The publisher name is attacker-controlled.
+Options: exact-match only (loses legitimate store flattening), name match plus an independent verifier, or require the store verified flag.
+Decision: Official veto requires the normalized name to match AND at least one verifier the attacker cannot cheaply forge: store-verified flag, publisher website under an official domain, or account age predating an established-brand cutoff. Name match alone does not veto; such records fall through to scoring.
+Rationale: Trust belongs to identity, not to a string. The verifier set is defense in depth: any one suffices, and all are hard to fake under the threat model's phishing economics. Verified on the set: the impersonator no longer vetoes, real official records still do, repackaged still fires.
+Rejected and why: Exact match only - drops legitimate Turkish-flattened publisher names (App Store case). Verified-flag only - not all legitimate publishers carry the flag on every store.
+Status: active
+
 ---
 
 # Tried and Abandoned
@@ -115,6 +123,7 @@ Status: active
 | Tried | Observed | Why dropped / what replaced it | Branch | Phase |
 |---|---|---|---|---|
 | _(empty)_ | | | |
+| Normalized publisher-name veto (no verifier) | An impersonator spoofed the flattened official name and was forced to official | Replaced with identity-verifier veto (K-014) | feat/triage-t0 | Triage |
 | confusable_homoglyphs library | Maps a char to all its look-alikes (one-to-many), not to a canonical target | Replaced with a curated confusables map for normalization | (no branch, removed before commit) | Discovery | |
 
 ---
