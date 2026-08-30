@@ -1,0 +1,38 @@
+[
+  {
+    "appId": "tr.com.ornekbank.mobil",
+    "title": "Örnek Bank Mobil",
+    "developer": "Örnek Bank A.Ş.",
+    "developerSince": "2012-05-14",
+    "developerAppCount": 6,
+    "developerWebsite": "https://www.ornekbank.com.tr",
+    "developerVerified": true,
+    "description": "Örnek Bank Mobil ile hesaplarınıza ulaşın.",
+    "icon": "https://cdn.example/icon1.png",
+    "permissions": ["android.permission.INTERNET", "android.permission.CAMERA", "android.permission.USE_BIOMETRIC"],
+    "installs": "5,000,000+",
+    "score": 4.3,
+    "ratings": 182000,
+    "released": "2013-02-01",
+    "updated": "2026-08-10",
+    "version": "9.4.1"
+  },
+  {
+    "appId": "com.ornekbank.mobil2026",
+    "title": "Örnek Bank Mobil",
+    "developer": "OB Mobile",
+    "developerSince": "2026-08-15",
+    "developerAppCount": 1,
+    "developerWebsite": null,
+    "developerVerified": false,
+    "description": "Örnek Bank Mobil resmi. Giriş yapın.",
+    "icon": "https://cdn.example/icon2.png",
+    "permissions": "android.permission.INTERNET, android.permission.READ_SMS, android.permission.RECEIVE_SMS",
+    "installs": "1K+",
+    "score": 5.0,
+    "ratings": 14,
+    "released": "2026-08-16",
+    "updated": "2026-08-16",
+    "version": "1.0"
+  }
+]

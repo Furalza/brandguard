@@ -1,0 +1,10 @@
+[
+  {
+    "package": "com.ornekbank.kampanya",
+    "label": "Örnek Bank Kampanya ve Fırsatlar",
+    "publisher": {"displayName": "Promo Mobil", "joinedEpoch": 1739491200, "appCount": 4, "url": null, "isVerified": false},
+    "summary": "Örnek Bank kampanyaları. Hesabınızı bağlayın.",
+    "metrics": {"downloadText": "20K", "stars": 4.5, "reviewTotal": 310},
+    "meta": {"iconUrl": "https://cdn.example/icon3.png", "perms": ["READ_SMS", "RECEIVE_SMS", "READ_CONTACTS"], "firstSeen": "2026-02-20", "lastSeen": "2026-08-14", "versionName": "3.1"}
+  }
+]

@@ -100,6 +100,14 @@ Rationale: Measured cost is tiny (0-2 variants per brand, since multigraphs occu
 Rejected and why: Adding the generator without a test record - would let us claim coverage we could not demonstrate.
 Status: active
 
+## K-013: Adapter protocol with shared value-parsing
+Context: Sources return different schemas (flat, nested, terse third-party). Triage must be source-agnostic.
+Options: one parser per source with duplicated logic, or a shared protocol plus reused value parsers.
+Decision: A SourceAdapter Protocol with one parse() per source; value-format conversions (downloads, dates, permissions) live in parsing.py and are shared. A registry maps source name to adapter; adding a source is one class.
+Rationale: Field mapping is source-specific and belongs in the adapter; value formats ("1,000+", epoch, "1K") recur across sources and belong in one place. Helpers fail soft to None so one bad field never drops a record, preserving the missing-vs-zero distinction.
+Rejected and why: Per-source parsers with copied conversion code - drift and duplicated bugs. A single mega-parser with if/source branches - unreadable and hard to extend.
+Status: active
+
 ---
 
 # Tried and Abandoned

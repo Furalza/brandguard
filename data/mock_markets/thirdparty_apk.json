@@ -1,0 +1,13 @@
+[
+  {
+    "pkg": "tr.com.ornekbank.mobil",
+    "name": "Ornek Bank Mobile",
+    "uploader": "Ornek Bank",
+    "desc": "Ornek Bank Mobile banking.",
+    "img": "https://cdn.example/icon4.png",
+    "perm": "INTERNET;CAMERA;USE_BIOMETRIC;ACCESS_FINE_LOCATION;READ_CONTACTS",
+    "dl": "3200",
+    "date": "2026-08-19",
+    "ver": "9.4.1"
+  }
+]
