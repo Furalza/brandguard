@@ -31,7 +31,7 @@ def test_core_strategies_present():
     # variant collapses onto the exact brand and is deduplicated away. The other
     # strategies always contribute.
     strategies = {q.strategy for q in expand(BRAND)}
-    assert {"homoglyph", "typosquat", "leet", "suffix", "spacing"} <= strategies
+    assert {"homoglyph", "typosquat", "leet", "multigraph", "suffix", "spacing"} <= strategies
 
 
 def test_turkish_strategy_contributes_for_ascii_brand():
@@ -58,3 +58,9 @@ def test_coverage_of_impersonations_is_complete():
     assert len(surfaced) == len(targets), (
         f"missed: {[r['record']['name'] for r in targets if r not in surfaced]}"
     )
+
+
+def test_multigraph_substitution_generates_variant():
+    # "Örnek" contains "rn"; collapsing it to "m" yields "omek", a real attack.
+    terms = {q.term for q in expand(BRAND)}
+    assert "omek bank" in terms

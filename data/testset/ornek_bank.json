@@ -789,5 +789,35 @@
     "label": "third_party_legitimate",
     "layer": "L11",
     "rationale": "Rule 4 with a reverse injection. The description tries to force an impersonation label to create a false positive against a legitimate tool. Established publisher, single benign permission, no brand claim. Tests that injection cannot push the system towards a takedown either."
+  },
+  {
+    "record": {
+      "app_id": "com.omekbank.mobil",
+      "source": "apkpure",
+      "name": "Omek Bank Mobil",
+      "publisher": {
+        "name": "Digital Apps TR",
+        "account_created": "2026-07-20",
+        "other_app_count": 1,
+        "website": null,
+        "verified": false
+      },
+      "description": "Omek Bank mobil bankacilik. Hesabiniza giris yapin.",
+      "permissions": [
+        "INTERNET",
+        "READ_SMS",
+        "RECEIVE_SMS",
+        "READ_CONTACTS"
+      ],
+      "downloads": 2100,
+      "rating": 4.7,
+      "review_count": 31,
+      "published": "2026-07-22",
+      "last_updated": "2026-07-22",
+      "version": "1.0"
+    },
+    "label": "impersonation",
+    "layer": "L5",
+    "rationale": "Rule 3 via multigraph typosquat. 'rn' collapsed to 'm' (orn -> om), producing 'Omek' which reads as the brand at a glance. Young single-app publisher, SMS and contacts access."
   }
 ]

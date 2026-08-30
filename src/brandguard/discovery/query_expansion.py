@@ -49,6 +49,18 @@ _TURKISH_SUBS: dict[str, list[str]] = {
     "u": ["ü"],
 }
 
+# Multi-character (multigraph) lookalikes, both directions. Visually strong and
+# genuinely used ("rn" reads as "m", "vv" as "w"). Kept small; multigraphs occur
+# rarely in a name, so they add few variants. See K-012.
+_MULTIGRAPH_SUBS: dict[str, list[str]] = {
+    "m": ["rn"],
+    "rn": ["m"],
+    "w": ["vv"],
+    "vv": ["w"],
+    "d": ["cl"],
+    "cl": ["d"],
+}
+
 # Digit and symbol lookalikes (leetspeak). Limited to high-confidence swaps that
 # attackers actually use; adding these covered a real miss ("ornek 8ank") at a
 # cost of a handful of extra queries. See K-011.
@@ -83,6 +95,19 @@ def _homoglyph_variants(name: str, cap: int) -> list[str]:
             out.append(name[:i] + sub + name[i + 1 :])
             if len(out) >= cap:
                 return out
+    return out
+
+
+def _multigraph_variants(name: str, cap: int) -> list[str]:
+    out: list[str] = []
+    for pattern, subs in _MULTIGRAPH_SUBS.items():
+        start = name.find(pattern)
+        while start != -1:
+            for sub in subs:
+                out.append(name[:start] + sub + name[start + len(pattern) :])
+                if len(out) >= cap:
+                    return out
+            start = name.find(pattern, start + 1)
     return out
 
 
@@ -141,6 +166,7 @@ def expand(
     turkish_cap: int = 8,
     typo_cap: int = 20,
     leet_cap: int = 12,
+    multigraph_cap: int = 8,
 ) -> list[Query]:
     """Expand a brand name into deduplicated search queries.
 
@@ -165,6 +191,8 @@ def expand(
         add(term, "homoglyph")
     for term in _turkish_variants(base, turkish_cap):
         add(term, "turkish")
+    for term in _multigraph_variants(base, multigraph_cap):
+        add(term, "multigraph")
     for term in _leet_variants(base, leet_cap):
         add(term, "leet")
     for term in _typosquat_variants(base, typo_cap):

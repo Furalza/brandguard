@@ -93,6 +93,13 @@ Rejected and why: Unbounded typo generation - thousands of terms, mostly noise n
 Known limit: coverage is measured against a substring model of search, not a live engine; real recall depends on store indexing.
 Status: active
 
+## K-012: Multigraph substitutions, added with a matching test case first
+Context: Multi-character lookalikes ("rn"->"m", "vv"->"w") are genuine, visually strong impersonation techniques not covered by single-character maps.
+Decision: Add a small bidirectional multigraph map to query expansion. Before adding the generator, a multigraph impersonation record ("Omek Bank Mobil") was added to the evaluation set so the feature could be validated, not merely asserted.
+Rationale: Measured cost is tiny (0-2 variants per brand, since multigraphs occur rarely in a name) and coverage of the new attack is confirmed at 100%. Adding a feature without a case that exercises it would be an unmeasurable claim.
+Rejected and why: Adding the generator without a test record - would let us claim coverage we could not demonstrate.
+Status: active
+
 ---
 
 # Tried and Abandoned
