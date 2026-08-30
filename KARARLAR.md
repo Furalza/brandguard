@@ -71,6 +71,20 @@ Rationale: The library answers "what could this be confused with" (detection, on
 Rejected and why: confusable_homoglyphs - wrong direction and noisy output. Pure NFKC - does not fold Cyrillic/Greek at all (verified).
 Status: active
 
+## K-009: Name similarity is multi-dimensional, not a single score
+Context: Measured across the evaluation set, no single fuzzy metric separates official from impersonation; an exact-brand name appears under official, impersonation and repackaged alike.
+Options: single ratio with a threshold, weighted blend of metrics into one score, or a structured multi-field signal.
+Decision: compare_name returns NameSimilarity with jaro_winkler, token_set, starts_with_brand, contains_brand and exact_skeleton. Triage reads them together; the name signal never decides a label alone.
+Rationale: The name tells us how a candidate resembles the brand, not whether it is legitimate. Collapsing to one number destroys the position and skeleton information that later signals need. JaroWinkler chosen for the scalar because it is most consistent on typosquats and homoglyphs after normalization; token_set complements it for suffix/word-order cases.
+Rejected and why: Single ratio - conflates mid-name mention (third-party) with leading brand (impersonation). Blended score - hides the dimensions that resolve conflicts.
+Status: active
+
+## K-010: Cheap noise filter validated against recall
+Context: T0 must drop unrelated noise cheaply, but must not drop real threats.
+Decision: is_noise = jaro_winkler < 0.60 and brand not contained. Verified on the bank set: 3 of 27 dropped, none of them official/impersonation/repackaged.
+Rationale: A cheap filter is only safe if it provably costs no recall. The check is part of the test suite intent and re-run whenever the set changes.
+Status: active
+
 ---
 
 # Tried and Abandoned
