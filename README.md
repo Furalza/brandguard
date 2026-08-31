@@ -111,12 +111,18 @@ On the 44-record development set (deterministic adjudicator):
 A locked holdout of unseen records, evaluated once, reproduced these figures
 (6/8 exact, 0% takedown FP, 0% missed threats); the two misses are the known
 `unrelated`/`third_party` confusion, which carries no takedown cost. Details and
-known weaknesses are in `KARARLAR.md`.
+known weaknesses are in `KARARLAR.md`. 
+
+The system also runs against live Google Play via an optional source
+(`scripts/scrape_and_triage.py`); testing on real data surfaced and fixed
+issues the mock never showed (schema inconsistency, and a false-positive where a
+real bank's official app was flagged for takedown), recorded as K-029 through
+K-032.
 
 ## Tests
 
 ```bash
-pytest        # 94 tests
+pytest        # 109 tests
 ruff check .
 ```
 
