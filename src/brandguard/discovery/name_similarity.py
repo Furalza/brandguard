@@ -66,7 +66,24 @@ def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
 
     jw = distance.JaroWinkler.normalized_similarity(brand, cand)
     token_set = fuzz.token_set_ratio(brand, cand) / 100.0
-    starts = cand_toks[: len(brand_toks)] == brand_toks if brand_toks else False
+    if brand_toks:
+        # A leading typosquat ("ornek bankk") still leads with the brand even
+        # though its tokens are not identical. Match each brand token against the
+        # candidate token in the same position with a high fuzzy threshold, so a
+        # distorted brand prefix is recognized as leading, not as a mid-name
+        # mention. Exact equality remains the common, cheap path.
+        lead = cand_toks[: len(brand_toks)]
+        if lead == brand_toks:
+            starts = True
+        elif len(lead) == len(brand_toks):
+            starts = all(
+                distance.JaroWinkler.normalized_similarity(b, c) >= 0.85
+                for b, c in zip(brand_toks, lead)
+            )
+        else:
+            starts = False
+    else:
+        starts = False
     contains = brand in cand
     exact_skeleton = skeleton(candidate) == skeleton(brand_name)
     if brand_toks:

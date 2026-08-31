@@ -116,7 +116,7 @@ known weaknesses are in `KARARLAR.md`.
 ## Tests
 
 ```bash
-pytest        # 92 tests
+pytest        # 94 tests
 ruff check .
 ```
 

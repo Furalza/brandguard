@@ -51,3 +51,15 @@ def test_ecosystem_subbrand_name_alone_looks_like_noise():
     sim = compare_name("Örnek Yatırım", BRAND)
     assert not sim.contains_brand
     assert sim.brand_token_coverage < 1.0
+
+
+def test_leading_typosquat_is_recognized_as_starting_with_brand():
+    # A distorted second token must not demote a leading brand prefix to a
+    # mid-name mention; the evidence an analyst reads depends on this.
+    sim = compare_name("Örnek Bankk Mobil", BRAND)
+    assert sim.starts_with_brand
+
+
+def test_mid_name_mention_still_does_not_start():
+    sim = compare_name("Kredi Karşılaştır: Örnek Bank, Diğer Bankalar", BRAND)
+    assert not sim.starts_with_brand

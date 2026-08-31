@@ -190,6 +190,12 @@ Decision: Added L3-L7 and L11 adversarial logistics records (red-team style, hom
 Results (locked holdout, single run): 6/8 exact, takedown FP 0/2 = 0.0%, missed threats 0/2 = 0.0%. The two misses are both the unrelated<->third_party benign-family confusion (zero takedown cost), independently reproducing the known weakness from the development set. Development set (44 records): takedown FP 0%, missed threats 0%, impersonation precision 1.0 recall 0.938, cost 84% decided at T0.
 Rationale: The holdout confirms the system generalizes (same behaviour on unseen records) and that its one real weakness is the cheap-tier semantic split, exactly where it was predicted. The single missed-in-recall impersonation ("Puan Kazan", 7-month account, no strong independent signal) defers to uncertain rather than forcing a call; that is K-018 working, not a failure.
 Status: active
+## K-026: Leading typosquats recognized as starting with the brand (evidence correctness)
+Context: A live run showed "Örnek Bankk Mobil" described in its evidence as "mentions the brand but does not lead with it", although it clearly leads with a typosquatted brand. The verdict was still impersonation (other signals carried it), but the analyst-facing evidence was wrong and the name signal contributed as neutral instead of suspicious.
+Decision: starts_with_brand matches the leading tokens against the brand tokens with a high fuzzy threshold (Jaro-Winkler >= 0.85) when they are not identical, so a distorted brand prefix counts as leading. Exact match stays the cheap common path.
+Rationale: The output exists to give an analyst correct facts; a misleading evidence line is a real defect even when the label is right. Verified: the fix corrects the evidence with zero change to the metric dashboard (FP 0%, recall 0.938, 84% at T0) and no regression on mid-name mentions or ecosystem sub-brands.
+Status: active
+
 ---
 
 # Tried and Abandoned
