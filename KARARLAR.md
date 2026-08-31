@@ -216,6 +216,12 @@ Rationale: Real data is inconsistent in ways hand-built mocks are not; the adapt
 Observed on live data: no impersonation labels for the synthetic "Örnek Bank" (no real impersonator exists, and the scraper omits account age and verification, so the strongest attacker-independent signals are absent and the system stays conservative, consistent with K-028). Real brands ("Ziraat Mobil") map and triage correctly.
 Status: active
 
+## K-030: Live-run polish from real output (query-skip message, empty-id filter)
+Context: A real "Ziraat" run showed two rough edges: a query still failed with a bare "TypeError" (Google Play raising from inside the scraper on an exotic homoglyph variant), and one listing reached the output with an empty app_id.
+Decision: The query-level handler now prints a human-readable skip line explaining that Play returned an unexpected response, instead of a bare exception name; and records with no app_id are dropped before triage, since an analyst cannot act on an unidentifiable listing.
+Rationale: The scraper failure is inherent to an unofficial interface and is already isolated per query (the run continues with the other queries), so the fix is clarity, not suppression. An empty-id record is not actionable output. Both changes came from reading real output, not from the mocks, which is why they surfaced only after the live run.
+Status: active
+
 ---
 
 # Tried and Abandoned

@@ -52,12 +52,19 @@ def gather(profile: BrandProfile, max_queries: int, hits: int) -> list[AppRecord
         try:
             found = search_and_fetch(term, n_hits=hits)
         except Exception as exc:  # noqa: BLE001 - surface scraping failures
-            print(f"  ! query {term!r} failed: {type(exc).__name__}")
+            # Failures here are Google Play returning an unexpected response for
+            # a query (often the more exotic homoglyph variants); the scraper
+            # raises from inside its own parsing. This is a property of scraping
+            # an unofficial interface, not a defect in triage. Skip the query and
+            # keep going so one bad query never sinks the run.
+            print(f"  . query {term!r} skipped ({type(exc).__name__}: Play returned an unexpected response)")
             continue
         for record in found:
-            if record.app_id not in seen:
-                seen.add(record.app_id)
-                records.append(record)
+            # A record with no app id cannot be actioned by an analyst; drop it.
+            if not record.app_id or record.app_id in seen:
+                continue
+            seen.add(record.app_id)
+            records.append(record)
         print(f"  query {term!r}: {len(found)} hits, {len(records)} unique so far")
     return records
 
