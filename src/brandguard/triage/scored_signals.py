@@ -178,11 +178,51 @@ def permission_signal(record: AppRecord, profile: BrandProfile) -> SignalResult 
     )
 
 
+def review_consistency_signal(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
+    """A weak signal from the consistency between downloads, reviews and rating.
+
+    Review text and counts are attacker-controllable (reviews can be bought), so
+    this deliberately does not read review content and does not trust the raw
+    count. Instead it looks for an inconsistency an attacker cannot cheaply fake:
+    a large claimed install base with almost no reviews and a perfect rating is
+    not how organic apps behave. The signal is low weight and cannot decide a
+    label alone; it only nudges an already-suspicious record.
+
+    It abstains whenever the data needed for the comparison is missing, keeping
+    the missing-vs-zero discipline.
+    """
+    downloads = record.downloads
+    reviews = record.review_count
+    rating = record.rating
+    if downloads is None or reviews is None:
+        return None
+    if downloads < 100_000:
+        return None  # small apps legitimately have few reviews; no inference
+    # Expected reviews scale very roughly with installs; well under 0.01% of a
+    # large install base, combined with a near-perfect rating, is the pattern
+    # bought-review inflation produces.
+    ratio = reviews / downloads
+    perfect_rating = rating is not None and rating >= 4.8
+    if ratio < 0.0001 and perfect_rating:
+        return SignalResult(
+            name="review_consistency",
+            direction=Direction.SUSPICIOUS,
+            strength=0.25,
+            text=(
+                f"Claims {downloads:,} installs but only {reviews} reviews with a "
+                f"{rating} rating, an organically implausible pattern."
+            ),
+            meta={"downloads": downloads, "reviews": reviews, "rating": rating},
+        )
+    return None
+
+
 SCORED_SIGNALS = (
     name_signal,
     account_age_signal,
     solo_publisher_signal,
     permission_signal,
+    review_consistency_signal,
 )
 
 

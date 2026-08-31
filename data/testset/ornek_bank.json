@@ -819,5 +819,34 @@
     "label": "impersonation",
     "layer": "L5",
     "rationale": "Rule 3 via multigraph typosquat. 'rn' collapsed to 'm' (orn -> om), producing 'Omek' which reads as the brand at a glance. Young single-app publisher, SMS and contacts access."
+  },
+  {
+    "record": {
+      "app_id": "com.ornekbank.mobil.official",
+      "source": "apkpure",
+      "name": "Örnek Bank Mobil Resmi",
+      "publisher": {
+        "name": "Bank Apps Global",
+        "account_created": "2026-05-01",
+        "other_app_count": 2,
+        "website": null,
+        "verified": false
+      },
+      "description": "Örnek Bank resmi mobil uygulama. Milyonlarca kullanıcı.",
+      "permissions": [
+        "INTERNET",
+        "READ_SMS",
+        "RECEIVE_SMS"
+      ],
+      "downloads": 5000000,
+      "rating": 5.0,
+      "review_count": 30,
+      "published": "2026-05-05",
+      "last_updated": "2026-08-01",
+      "version": "1.0"
+    },
+    "label": "impersonation",
+    "layer": "L3",
+    "rationale": "Rule 3. Claims 5M installs but only 30 reviews at a perfect 5.0 rating (bought-review inflation, an organically implausible pattern), young publisher, SMS access."
   }
 ]

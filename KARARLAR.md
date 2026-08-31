@@ -222,6 +222,12 @@ Decision: The query-level handler now prints a human-readable skip line explaini
 Rationale: The scraper failure is inherent to an unofficial interface and is already isolated per query (the run continues with the other queries), so the fix is clarity, not suppression. An empty-id record is not actionable output. Both changes came from reading real output, not from the mocks, which is why they surfaced only after the live run.
 Status: active
 
+## K-031: Review signal via consistency, not content (closing the one deliberate gap)
+Context: The brief lists user reviews among the available signals; we had deliberately skipped them because review text and counts are attacker-controllable (reviews can be bought). This closes that gap without opening an injection surface.
+Decision: Added review_consistency_signal. It never reads review text and does not trust the raw count. It fires only on a pattern an attacker cannot cheaply fake: a large claimed install base (>=100k) with a review ratio under 0.01% and a near-perfect rating (>=4.8), which is how bought-review inflation looks against organic behaviour. Weight is 0.25 (cannot decide a label alone) and it abstains whenever downloads or reviews are missing. A test impersonation record exercising the pattern was added first (K-012 discipline).
+Rationale: The honest way to use an attacker-controlled signal is to key on the inconsistency the attacker leaves behind, not on the content they author. Verified: fires on the inflated pattern, abstains on legitimate large apps, small apps, missing data, and merely-few-reviews-without-perfect-rating. Metrics unchanged (FP 0%, recall 0.938); it adds coverage without disturbing existing decisions.
+Rejected and why: reading review text/sentiment - attacker-authored, injection surface; trusting raw review count - trivially inflated; sudden-spike detection - needs review timestamps neither the mock nor the scraper provides.
+Status: active
 ---
 
 # Tried and Abandoned
