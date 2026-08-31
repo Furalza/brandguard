@@ -184,6 +184,12 @@ Rationale: An LLM is non-deterministic; metrics computed through it are snapshot
 Known limits recorded with the numbers: the unrelated class collapses into third_party (benign-family confusion, zero takedown cost, K-016); T1 shows zero usage in evaluation because test records carry no icon files.
 Status: active
 
+## K-025: Balanced logistics set; locked holdout run once
+Context: The logistics set had no adversarial layers (9 records, no L3-L7/L11); and the brief requires a held-out check on unseen records.
+Decision: Added L3-L7 and L11 adversarial logistics records (red-team style, homoglyph verified) bringing it to 16, all layers represented. Wrote an 8-record locked holdout for the bank brand, biased to the hard layers, kept git-ignored and never consulted during development, then evaluated exactly once.
+Results (locked holdout, single run): 6/8 exact, takedown FP 0/2 = 0.0%, missed threats 0/2 = 0.0%. The two misses are both the unrelated<->third_party benign-family confusion (zero takedown cost), independently reproducing the known weakness from the development set. Development set (44 records): takedown FP 0%, missed threats 0%, impersonation precision 1.0 recall 0.938, cost 84% decided at T0.
+Rationale: The holdout confirms the system generalizes (same behaviour on unseen records) and that its one real weakness is the cheap-tier semantic split, exactly where it was predicted. The single missed-in-recall impersonation ("Puan Kazan", 7-month account, no strong independent signal) defers to uncertain rather than forcing a call; that is K-018 working, not a failure.
+Status: active
 ---
 
 # Tried and Abandoned
@@ -204,7 +210,10 @@ Status: active
 
 - T0 lands two unrelated records sharing only the generic token "örnek" in uncertain instead of unrelated. Low cost (no threat missed); deferred to T1/T2.
 - T0 confuses unrelated with third_party in the benign family (semantic distinction); intended to be resolved by T2.
-- (more added after full evaluation)
+- unrelated vs third_party: the cheap tiers cannot separate these (semantic, K-016); measured as unrelated precision/recall 0.0 on the dev set, both benign-family, zero takedown cost. Deferred to T2/a future classifier.
+- One logistics impersonation ("Puan Kazan") defers to uncertain instead of impersonation: a 7-month account with no strong attacker-independent signal; correct per K-018, recall cost accepted for precision.
+- T1 (icon) shows zero usage in offline evaluation because test records carry no icon files; validated separately with synthetic icons.
+- Live LLM (OpenAI) agreement 23/28 on the bank set; all disagreements benign-family.
 
 ---
 
