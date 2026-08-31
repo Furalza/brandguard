@@ -220,3 +220,44 @@ Status: active
 # With One More Month
 
 _(written before submission)_
+
+The single most valuable month would go to the one measured weakness, not to new
+features.
+
+1. **A learned classifier for the unrelated/third_party split.** This is the only
+   error the evaluation shows (unrelated precision/recall 0.0 on the dev set,
+   reproduced on the holdout). It is semantic and the cheap tiers provably cannot
+   make it (K-016). I would label a few hundred real listings, train a small
+   text classifier on the description and name, and use it as a T1 signal so T2
+   is reserved for genuinely hard cases. This is bounded, measurable work with a
+   clear success metric.
+
+2. **Signature and certificate checks for repackaged detection.** Today the
+   package-id veto and the mirror ambiguity (the L10 case that stays uncertain)
+   both really want APK signature comparison. With signatures, "official app from
+   an unofficial publisher" becomes a certainty rather than an inference, and the
+   uncertain mirror resolves. This closes the largest genuine information gap.
+
+3. **Real discovery against one live source, rate-limited.** The query expander's
+   coverage is measured against a substring model of search, not a live index
+   (K-011 known limit). Wiring one real marketplace behind the existing adapter
+   interface would replace an assumption with a measurement, and would surface
+   the discovery blind spots (e.g. the "HK Esnaf" abbreviation case) that the
+   mock cannot.
+
+4. **Calibration on more data.** Confidence is calibrated against tens of
+   records; the high-confidence bin is trustworthy but the middle bins are thin.
+   More labelled data would let me fit and validate a proper calibration curve
+   instead of the honest-but-coarse table used now.
+
+5. **Cost and latency instrumentation in production shape.** The cascade's cost
+   claim (84% decided at T0) is measured offline. In production I would add
+   per-tier timing and a cache keyed by app_id+version so a record is never sent
+   to T2 twice, and report real cost per thousand records.
+
+What I would NOT spend the month on: more marketplace adapters (the interface
+already makes them cheap), more query-expansion strategies (coverage is already
+100% on the set; the bottleneck is discovery against a real index, not more
+transforms), or a larger LLM (the adjudicator is not the accuracy bottleneck;
+the deterministic layer and the missing signature data are).
+
