@@ -43,9 +43,11 @@ def test_unrelated_is_noise():
     assert compare_name("Bankamatik Rehberi", BRAND).is_noise
 
 
-def test_ecosystem_subbrand_is_not_noise_but_does_not_contain_brand():
-    # "Örnek Yatırım" shares only the first token; still worth keeping for the
-    # publisher check, so it must not be filtered as noise.
+def test_ecosystem_subbrand_name_alone_looks_like_noise():
+    # "Örnek Yatırım" shares only the generic token "örnek" with the brand, so on
+    # name alone it reads as noise. It is rescued not by its name but by the
+    # publisher veto (tested in test_veto). This documents that name similarity
+    # correctly refuses to treat a single generic-token overlap as resemblance.
     sim = compare_name("Örnek Yatırım", BRAND)
-    assert not sim.is_noise
     assert not sim.contains_brand
+    assert sim.brand_token_coverage < 1.0

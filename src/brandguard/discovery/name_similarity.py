@@ -36,11 +36,21 @@ class NameSimilarity:
     starts_with_brand: bool
     contains_brand: bool
     exact_skeleton: bool
+    brand_token_coverage: float
 
     @property
     def is_noise(self) -> bool:
-        """True when the name is too dissimilar to be worth further analysis."""
-        return self.jaro_winkler < 0.60 and not self.contains_brand
+        """True when the name is too dissimilar to be worth further analysis.
+
+        Also treats a name that shares only a small fraction of the brand's
+        tokens as noise: for a multi-word brand, overlapping on one common word
+        (e.g. the Turkish word "örnek") is not resemblance.
+        """
+        if self.contains_brand:
+            return False
+        if self.jaro_winkler < 0.60:
+            return True
+        return self.brand_token_coverage < 0.5
 
 
 def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
@@ -55,6 +65,11 @@ def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
     starts = cand_toks[: len(brand_toks)] == brand_toks if brand_toks else False
     contains = brand in cand
     exact_skeleton = skeleton(candidate) == skeleton(brand_name)
+    if brand_toks:
+        covered = sum(1 for t in brand_toks if t in cand_toks)
+        coverage = covered / len(brand_toks)
+    else:
+        coverage = 0.0
 
     return NameSimilarity(
         jaro_winkler=round(jw, 3),
@@ -62,4 +77,5 @@ def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
         starts_with_brand=starts,
         contains_brand=contains,
         exact_skeleton=exact_skeleton,
+        brand_token_coverage=round(coverage, 3),
     )
