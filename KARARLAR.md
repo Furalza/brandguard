@@ -158,11 +158,24 @@ Decision: Extracted the post-veto decision into _decide_from_signals, shared by 
 Rationale: One decision rule in one place prevents T0 and T1 from drifting apart. Spending T1 cost only on escalated records with an icon keeps the cascade economical. Treating the icon as supporting-only is consistent with the threat model: an icon is attacker-controllable.
 Status: active
 
+## K-021: T2 adjudicator behind one interface; injection-safe case summary
+Context: T2 must resolve semantic cases (K-016) with an LLM without exposing the false-positive budget or the prompt to attacker control.
+Decision: An Adjudicator protocol with two implementations: AnthropicAdjudicator (real API, key from environment) and RuleAdjudicator (deterministic stand-in for tests and keyless runs). The model receives only a structured CaseSummary built from facts our own code computed; attacker text is reduced to bounded booleans (claims-official, names-brand) and never quoted. The opinion re-enters fusion as a dampened signal (max strength 0.5) so it cannot cross the impersonation threshold alone. A benign leaning may settle the unrelated/third_party split; that is the language judgement T2 exists for.
+Rationale: Ports-and-adapters keeps the pipeline testable everywhere and demo-safe offline. Structured facts close the injection surface: tests prove no attacker sentence survives serialization and neither injection direction flips an outcome. Dampening keeps the deterministic layer in charge of the FP budget (K-006).
+Status: active
+
+## K-022: Negation-aware official-claim detection
+Context: The claims-official fact matched the word "resmi" alone, so the honest disclaimer "Resmi uygulama degildir" registered as a claim of officialness and pushed a legitimate locator toward impersonation.
+Decision: The fact is affirmative-only: an official-word match is cancelled by a nearby negation (degildir/not official/unofficial).
+Rationale: A disclaimer is the opposite of a claim; treating them alike manufactures false positives exactly where honest third parties are most careful.
+Status: active
+
 ---
 
 # Tried and Abandoned
 
 | Tried | Observed | Why dropped / what replaced it | Branch | Phase |
+| Word-match official-claim detection | 'Resmi uygulama degildir' (a disclaimer) counted as claiming official | Negation-aware detection (K-022) | feat/tier2 | Triage |
 |---|---|---|---|---|
 | _(empty)_ | | | |
 | | Name-only unrelated detection | Marked ecosystem and typosquats as noise | Replaced with objective brand relation + token alignment (K-016, K-017) | feat/triage-fusion | Triage |
