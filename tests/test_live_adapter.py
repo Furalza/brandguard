@@ -35,3 +35,20 @@ def test_missing_title_and_developer_do_not_crash():
     assert r.app_id == "com.x.y"
     assert r.name == ""
     assert r.publisher.name == ""
+
+
+def test_real_data_quirks_do_not_crash():
+    # Shapes real Google Play returns that broke the first version: string
+    # numerics, non-string id, None fields, float version, bad email.
+    quirks = [
+        {"appId": "a", "title": "X", "developer": "Y", "score": "4.5"},
+        {"appId": 123, "title": "X", "developer": "Y"},
+        {"appId": "d", "title": None, "developer": None},
+        {"appId": "e", "title": "X", "developer": "Y", "version": 1.0},
+        {"appId": "f", "title": "X", "developer": "Y", "developerEmail": "noatsign"},
+    ]
+    for q in quirks:
+        r = _detail_to_record(q)
+        assert isinstance(r.app_id, str)
+        assert r.rating is None or isinstance(r.rating, (int, float))
+        assert r.version is None or isinstance(r.version, str)

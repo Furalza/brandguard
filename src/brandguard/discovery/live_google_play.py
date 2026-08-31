@@ -23,29 +23,44 @@ from brandguard.schema import AppRecord, Publisher
 
 
 def _detail_to_record(detail: dict) -> AppRecord:
-    """Map one google-play-scraper app() result onto an AppRecord."""
+    """Map one google-play-scraper app() result onto an AppRecord.
+
+    Real Play data is inconsistent: numeric fields arrive as strings or None,
+    emails are sometimes absent, ids are occasionally non-string. Everything is
+    coerced defensively so a live listing maps or is skipped by the caller, never
+    corrupts the record.
+    """
+    app_id = str(detail.get("appId") or detail.get("appid") or "").strip()
+    email = detail.get("developerEmail") or ""
+    email_domain = email.split("@")[-1] if "@" in email else None
+    rating = detail.get("score")
+    if not isinstance(rating, (int, float)):
+        rating = None
+    review_count = detail.get("ratings")
+    if not isinstance(review_count, int):
+        review_count = None
+
     return AppRecord(
-        app_id=detail["appId"],
+        app_id=app_id,
         source="google_play_live",
-        name=detail.get("title", ""),
+        name=str(detail.get("title") or ""),
         publisher=Publisher(
-            name=detail.get("developer", ""),
-            # Account age and verification are not exposed by the scraper.
+            name=str(detail.get("developer") or ""),
             account_created=None,
             other_app_count=None,
             website=detail.get("developerWebsite"),
-            email_domain=(detail.get("developerEmail") or "").split("@")[-1] or None,
+            email_domain=email_domain,
             verified=None,
         ),
         description=detail.get("description"),
         icon_url=detail.get("icon"),
         permissions=split_permissions(detail.get("permissions")),
         downloads=parse_downloads(detail.get("installs") or detail.get("realInstalls")),
-        rating=detail.get("score"),
-        review_count=detail.get("ratings"),
+        rating=rating,
+        review_count=review_count,
         published=parse_date(detail.get("released")),
         last_updated=parse_date(detail.get("updated")),
-        version=detail.get("version"),
+        version=detail.get("version") if isinstance(detail.get("version"), str) else None,
         raw=detail,
     )
 
@@ -77,5 +92,10 @@ def search_and_fetch(
                 detail = hit  # fall back to the search-result fields
         else:
             detail = hit
-        records.append(_detail_to_record(detail))
+        try:
+            records.append(_detail_to_record(detail))
+        except Exception:  # noqa: BLE001,S112 - one malformed listing must not drop the batch
+            # Real Play data occasionally returns shapes we cannot map; skip that
+            # single listing rather than losing the whole query's results.
+            continue
     return records

@@ -209,11 +209,19 @@ Rationale: This proves the mock-to-live path is real, not hypothetical. Live dat
 Known limit: without account-age and verification, the strongest attacker-independent signals are weaker on live Play data than on a source that exposes them; recorded as a reason the veto and impersonation gates are more conservative there.
 Status: active
 
+## K-029: Live-data hardening (real Play crashed the first adapter)
+Context: Running scrape_and_triage.py against real Google Play surfaced two failures the mock data never showed: some queries died with ValidationError/TypeError because real listings return string ratings, float versions, non-string ids, and malformed emails, and a single bad listing was dropping its entire query's results.
+Decision: Per-record isolation in the adapter (one unmappable listing is skipped, not the whole batch) plus defensive coercion in _detail_to_record (unexpected types become None rather than crashing the schema). Added tests reproducing the real-data quirks offline.
+Rationale: Real data is inconsistent in ways hand-built mocks are not; the adapter is the boundary where that inconsistency must be absorbed so triage never sees a malformed record. Losing one listing is acceptable; losing a query or crashing is not. This is the adapter interface (K-013) doing its job under real conditions.
+Observed on live data: no impersonation labels for the synthetic "Örnek Bank" (no real impersonator exists, and the scraper omits account age and verification, so the strongest attacker-independent signals are absent and the system stays conservative, consistent with K-028). Real brands ("Ziraat Mobil") map and triage correctly.
+Status: active
+
 ---
 
 # Tried and Abandoned
 
 | Tried | Observed | Why dropped / what replaced it | Branch | Phase |
+| First live adapter (strict field access) | Real Play returned types our schema rejected; one bad listing dropped a whole query | Per-record isolation + defensive coercion (K-029) | feat/live-source | Discovery |
 | Word-match official-claim detection | 'Resmi uygulama degildir' (a disclaimer) counted as claiming official | Negation-aware detection (K-022) | feat/tier2 | Triage |
 |---|---|---|---|---|
 | _(empty)_ | | | |
