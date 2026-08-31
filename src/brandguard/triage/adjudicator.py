@@ -29,6 +29,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 from brandguard.discovery.normalize import normalize, tokens
@@ -36,6 +37,29 @@ from brandguard.schema import AppRecord, BrandProfile, Label
 from brandguard.triage.signals import Direction, SignalResult
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+
+
+def _load_dotenv_once() -> None:
+    """Populate os.environ from a .env file at the repo root, if present.
+
+    Real environment variables always win; .env only fills gaps. This mirrors
+    how CI and production inject secrets, so behaviour never diverges between
+    a developer laptop and a deployed run. The .env file is git-ignored and a
+    keyless .env.example documents the expected names.
+    """
+    env_path = Path(".env")
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 
 # Phrases that claim official status, and negations that retract such a claim
 # ("resmi uygulama degildir" is a disclaimer, not a claim). Matched on the raw
@@ -261,10 +285,55 @@ class AnthropicAdjudicator:
         )
 
 
+
+
+class OpenAIAdjudicator:
+    """Adjudicator backed by the OpenAI API.
+
+    Same contract as AnthropicAdjudicator; only the transport differs. Requires
+    OPENAI_API_KEY. The SDK import is deferred like the Anthropic one.
+    """
+
+    def __init__(self, model: str = DEFAULT_OPENAI_MODEL):
+        self.model = model
+
+    def adjudicate(self, case: CaseSummary) -> AdjudicatorOpinion:
+        import openai
+
+        client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        facts = json.dumps(case.__dict__, ensure_ascii=False, indent=2, default=str)
+        response = client.chat.completions.create(
+            model=self.model,
+            max_tokens=300,
+            messages=[{"role": "user", "content": _PROMPT.format(facts=facts)}],
+        )
+        text = (response.choices[0].message.content or "").strip()
+        text = text.removeprefix("```json").removesuffix("```").strip()
+        data = json.loads(text)
+        leaning = data.get("leaning", Label.UNCERTAIN.value)
+        if leaning not in {label.value for label in Label}:
+            leaning = Label.UNCERTAIN.value
+        strength = max(0.0, min(1.0, float(data.get("strength", 0.3))))
+        return AdjudicatorOpinion(
+            leaning=leaning,
+            strength=strength,
+            reasoning=str(data.get("reasoning", ""))[:300],
+        )
+
+
 def get_adjudicator() -> Adjudicator:
-    """Return the real adjudicator when a key is configured, else the rule one."""
+    """Select the adjudicator by available credentials.
+
+    Order: Anthropic key, then OpenAI key, then the deterministic rule
+    adjudicator. A .env file at the repo root is consulted first (without
+    overriding real environment variables), so a developer can keep keys out of
+    the shell and out of the repo at once.
+    """
+    _load_dotenv_once()
     if os.environ.get("ANTHROPIC_API_KEY"):
         return AnthropicAdjudicator()
+    if os.environ.get("OPENAI_API_KEY"):
+        return OpenAIAdjudicator()
     return RuleAdjudicator()
 
 
