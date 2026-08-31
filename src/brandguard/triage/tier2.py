@@ -46,11 +46,17 @@ def triage_t2(
     decision = _decide_from_signals(record, profile, signals, tier=2)
 
     # T2 is the last tier: a benign leaning may settle the semantic split
-    # whenever the outcome would otherwise stay uncertain (whether flagged for
-    # escalation or merely scored into the uncertain middle), and anything still
-    # uncertain after that stays uncertain by design (a legitimate answer).
+    # whenever the outcome would otherwise stay uncertain. Two kinds of
+    # uncertainty must be kept apart here: semantic ambiguity (evidence exists,
+    # interpretation is needed) is what a language model can resolve; absence of
+    # evidence (no publisher data, no signature) is not, because no amount of
+    # reasoning fills a missing fact. As a concrete guard, a record requesting
+    # sensitive permissions is never settled benign on the adjudicator's word:
+    # a language judgement does not offset a concrete risk marker. Such records
+    # end as uncertain, which is the honest answer.
     still_uncertain = decision.escalate or decision.verdict.label == Label.UNCERTAIN
-    if still_uncertain and opinion.leaning in (
+    settle_allowed = not case.sensitive_permissions
+    if still_uncertain and settle_allowed and opinion.leaning in (
         Label.UNRELATED.value, Label.THIRD_PARTY.value,
     ):
         verdict = decision.verdict.model_copy(

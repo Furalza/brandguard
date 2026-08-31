@@ -29,12 +29,15 @@ def test_anthropic_key_wins(clean_env, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     monkeypatch.setenv("OPENAI_API_KEY", "test")
+    # Selection logic is under test, not SDK presence; neutralize the SDK check.
+    monkeypatch.setattr("brandguard.triage.adjudicator._require_sdk", lambda m: None)
     assert isinstance(get_adjudicator(), AnthropicAdjudicator)
 
 
 def test_openai_key_selected_when_only_openai(clean_env, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setattr("brandguard.triage.adjudicator._require_sdk", lambda m: None)
     assert isinstance(get_adjudicator(), OpenAIAdjudicator)
 
 
@@ -47,3 +50,15 @@ def test_dotenv_fills_gap_but_does_not_override(clean_env, monkeypatch, tmp_path
     _load_dotenv_once()
     assert os.environ["ANTHROPIC_API_KEY"] == "from-shell"  # real env wins
     assert os.environ["OPENAI_API_KEY"] == "from-file"      # gap filled
+
+
+def test_key_without_sdk_raises_clear_error(clean_env, monkeypatch, tmp_path):
+    # A configured key with a missing SDK must fail loudly, never fall back
+    # silently to the rule adjudicator.
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setattr(
+        "importlib.util.find_spec", lambda name: None
+    )
+    with pytest.raises(RuntimeError, match="SDK is not installed"):
+        get_adjudicator()

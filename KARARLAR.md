@@ -170,6 +170,13 @@ Decision: The fact is affirmative-only: an official-word match is cancelled by a
 Rationale: A disclaimer is the opposite of a claim; treating them alike manufactures false positives exactly where honest third parties are most careful.
 Status: active
 
+## K-023: Benign settle is blocked by sensitive permissions; two kinds of uncertainty
+Context: Live run with the OpenAI adjudicator settled the apkmirror mirror record (gold: uncertain, READ_CONTACTS, no publisher data) as third_party on a benign leaning. Had it been a real repack, a threat would have been labelled benign.
+Decision: T2's benign-settle authority applies only to semantic ambiguity. A record requesting sensitive permissions is never settled benign on the adjudicator's word; it ends uncertain. Separately, a configured API key with a missing SDK now fails loudly with an install hint instead of silently falling back to the rule adjudicator.
+Rationale: Two kinds of uncertainty must not be conflated: semantic ambiguity (evidence exists, interpretation needed) is what a language model resolves; absence of evidence (no signature, no publisher data) is not, because reasoning cannot fill a missing fact. A concrete risk marker (sensitive permission) outweighs a language judgement. Validated: legitimate settles (API Sample, locator) carry no sensitive permissions and still settle; the mirror stays uncertain. Silent fallback was rejected because the operator would believe the model is in use while it is not.
+Rejected and why: Trusting the model's benign call unconditionally - lets a language opinion cancel a concrete risk marker.
+Status: active
+
 ---
 
 # Tried and Abandoned

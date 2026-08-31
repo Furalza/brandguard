@@ -84,3 +84,24 @@ def test_t2_settles_benign_split():
         if d2.reason == "adjudicated_benign":
             settled += 1
     assert settled >= 1
+
+
+def test_benign_settle_blocked_by_sensitive_permissions():
+    # The apkmirror mirror record carries READ_CONTACTS and no publisher data.
+    # Even a benign adjudicator leaning must not settle it; evidence-absence
+    # uncertainty is not resolvable by language judgement.
+    from brandguard.triage.adjudicator import AdjudicatorOpinion
+
+    class BenignAdjudicator:
+        def adjudicate(self, case):
+            return AdjudicatorOpinion(
+                leaning=Label.THIRD_PARTY.value, strength=0.9, reasoning="benign"
+            )
+
+    mirror = next(
+        r for r in BANK if r["layer"] == "L10" and r["record"]["source"] == "apkmirror"
+    )
+    rec = AppRecord(**mirror["record"])
+    d0 = triage_t0(rec, PROFILE)
+    d2 = triage_t2(rec, PROFILE, d0, BenignAdjudicator())
+    assert d2.verdict.label == Label.UNCERTAIN

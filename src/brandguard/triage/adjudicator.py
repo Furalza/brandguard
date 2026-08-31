@@ -331,10 +331,28 @@ def get_adjudicator() -> Adjudicator:
     """
     _load_dotenv_once()
     if os.environ.get("ANTHROPIC_API_KEY"):
+        _require_sdk("anthropic")
         return AnthropicAdjudicator()
     if os.environ.get("OPENAI_API_KEY"):
+        _require_sdk("openai")
         return OpenAIAdjudicator()
     return RuleAdjudicator()
+
+
+def _require_sdk(module: str) -> None:
+    """Fail loudly when a key is configured but its SDK is not installed.
+
+    Falling back silently to the rule adjudicator would be worse: the operator
+    would believe the model is in use while it is not. A clear error with the
+    install command keeps the system honest about what is running.
+    """
+    import importlib.util
+
+    if importlib.util.find_spec(module) is None:
+        raise RuntimeError(
+            f"{module.upper()}_API_KEY is set but the '{module}' SDK is not installed. "
+            f'Run: pip install -e ".[dev,icons,llm]"'
+        )
 
 
 def opinion_as_signal(opinion: AdjudicatorOpinion) -> SignalResult:
