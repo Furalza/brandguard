@@ -117,12 +117,24 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
         return Decision(verdict=verdict, escalate=False, reason="veto")
 
     signals = collect_signals(record, profile)
+    return _decide_from_signals(record, profile, signals, tier=0)
+
+
+def _decide_from_signals(
+    record: AppRecord,
+    profile: BrandProfile,
+    signals: list[SignalResult],
+    tier: int,
+) -> Decision:
+    """Turn a signal set into a decision. Shared by T0 and T1 so the label rule
+    lives in one place; only the evidence differs between tiers."""
     score = _combine(signals)
     conflict = _has_conflict(signals)
     thin = len(signals) <= 1
     any_suspicion = any(
         s.direction == Direction.SUSPICIOUS and s.strength >= 0.4 for s in signals
     )
+    tiers_used = sorted({0, tier})
 
     # Low score and nothing accusing it: a benign record. Split into unrelated
     # vs third_party by objective brand relation, at low confidence.
@@ -135,7 +147,7 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
             confidence=0.65,
             evidence=[s.as_evidence() for s in signals],
             score=round(score, 3),
-            tiers_used=[0],
+            tiers_used=tiers_used,
         )
         return Decision(verdict=verdict, escalate=False, reason="benign")
 
@@ -146,8 +158,8 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
     # or permission drift measured against a KNOWN official baseline). A high
     # score built only from attacker-controllable or weak signals (name shape,
     # solo publisher, sector-only permission guess) is not decided here; it goes
-    # to T2. This is what separates a confident impersonation from a suspicious
-    # record that merely accumulated weak evidence.
+    # to the next tier. Icon similarity is attacker-controllable too, so it does
+    # not count as independent backing.
     strong_independent = any(
         (s.name == "account_age" and s.direction == Direction.SUSPICIOUS)
         or (s.name == "permission_drift" and s.meta.get("have_official_baseline"))
@@ -155,6 +167,8 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
     )
     unbacked_high = score >= _IMPERSONATION_THRESHOLD and not strong_independent
 
+    # At T1 the record has already been through one escalation; if it still lacks
+    # independent backing it should be handed to T2 rather than looping.
     escalate = conflict or in_grey or thin or unbacked_high
 
     label = Label.UNCERTAIN if escalate else _label_for_score(score)
@@ -168,7 +182,7 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
         confidence=confidence,
         evidence=[s.as_evidence() for s in signals],
         score=round(score, 3),
-        tiers_used=[0],
+        tiers_used=tiers_used,
         conflicts=conflicts,
     )
     reason = (

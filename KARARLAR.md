@@ -143,6 +143,21 @@ Rationale: This is the threat model's core rule ("every impersonation must be ba
 Rejected and why: Relabel to impersonation - grading the system against itself, invalid. Raise threshold - overfits to one point, risks missing real threats.
 Status: active
 
+## K-019: Icon similarity via perceptual hash, real algorithm on synthetic fixtures
+Context: T1 needs visual comparison of a candidate icon against the official icon, but we have no real logo files and generating fake logos adds no engineering value.
+Options: real imagehash on synthetic fixtures, a fully mocked hash interface, or full pHash with generated realistic logos.
+Decision: Use the real imagehash library (local, free, no API cost) and generate synthetic test icons via scripts/make_test_icons.py (official, near-copy, recolour, unrelated). Icon similarity is a T1 signal that runs only for undecided records with an icon, and is supporting evidence, never a veto.
+Rationale: The algorithm is real and verifiable at zero cost; only the data is synthetic, because real logos are expensive to source and add nothing to validation. Running pHash on every record would waste the cascade budget. An icon is attacker-controllable, so it cannot decide a label alone.
+Known limit: pHash is structure-sensitive and colour-insensitive; a same-layout recolour still reads as similar (validated by the recolour fixture). Recorded and tested as documented behaviour, not hidden.
+Rejected and why: Mocked hashes - would not prove the system can actually do visual comparison, near the "don't fake work" line. Generated logos - cost without validation value.
+Status: active
+
+## K-020: T1 shares the decision rule with T0; icon is supporting, not backing
+Context: T1 must add richer evidence (icon similarity) to records T0 left undecided, without duplicating the label logic or letting an attacker-controllable signal decide.
+Decision: Extracted the post-veto decision into _decide_from_signals, shared by T0 and T1. T1 runs only for escalated records with an icon, appends the icon signal, and re-runs the shared rule with tier=1. Icon similarity is explicitly excluded from the "strong attacker-independent" backing that K-018 requires; a copied icon plus a young account resolves to impersonation, a copied icon alone does not.
+Rationale: One decision rule in one place prevents T0 and T1 from drifting apart. Spending T1 cost only on escalated records with an icon keeps the cascade economical. Treating the icon as supporting-only is consistent with the threat model: an icon is attacker-controllable.
+Status: active
+
 ---
 
 # Tried and Abandoned
