@@ -62,7 +62,7 @@ def triage_t2(
         verdict = decision.verdict.model_copy(
             update={
                 "label": Label(opinion.leaning),
-                "confidence": 0.6,
+                "confidence": 0.55,
                 "tiers_used": [0, 2],
             }
         )

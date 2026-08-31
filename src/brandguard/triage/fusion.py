@@ -140,11 +140,16 @@ def _decide_from_signals(
     # vs third_party by objective brand relation, at low confidence.
     if score <= _LEGITIMATE_THRESHOLD and not any_suspicion and not conflict:
         label = _benign_label(record, profile, signals)
+        # Confidence 0.5 here, not higher: the unrelated/third_party split is
+        # measured to be right only about half the time (calibration bin
+        # 0.6-0.8 showed stated 0.65 vs actual 0.33 before this change). The
+        # coarse benign-vs-threat call is safe; the fine split is a coin-leaning
+        # guess and its confidence must say so.
         verdict = Verdict(
             app_id=record.app_id,
             source=record.source,
             label=label,
-            confidence=0.65,
+            confidence=0.5,
             evidence=[s.as_evidence() for s in signals],
             score=round(score, 3),
             tiers_used=tiers_used,

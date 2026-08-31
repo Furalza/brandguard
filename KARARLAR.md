@@ -177,6 +177,13 @@ Rationale: Two kinds of uncertainty must not be conflated: semantic ambiguity (e
 Rejected and why: Trusting the model's benign call unconditionally - lets a language opinion cancel a concrete risk marker.
 Status: active
 
+## K-024: Official evaluation uses the deterministic adjudicator; confidences recalibrated from measurement
+Context: Metrics must be reproducible, and the first calibration table caught the system overstating confidence: the 0.6-0.8 bin claimed 0.65 and achieved 0.33.
+Decision: scripts/evaluate.py runs the cascade with RuleAdjudicator so numbers are identical run to run; the live model is validated separately with run_cascade.py. Benign-split confidences were lowered to what measurement supports (0.5 for the T0 split, 0.55 for adjudicated settles), moving those decisions into a bin where stated 0.509 matches actual 0.455.
+Rationale: An LLM is non-deterministic; metrics computed through it are snapshots, not measurements. A confidence number is a promise to the analyst about how often the system is right; the calibration table showed the promise was broken for the benign split, and the honest fix is to state the uncertainty we actually have, not to invent precision.
+Known limits recorded with the numbers: the unrelated class collapses into third_party (benign-family confusion, zero takedown cost, K-016); T1 shows zero usage in evaluation because test records carry no icon files.
+Status: active
+
 ---
 
 # Tried and Abandoned
