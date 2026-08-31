@@ -89,13 +89,21 @@ def check_package_veto(record: AppRecord, profile: BrandProfile) -> SignalResult
     # it as official; do not also flag repackaged.
     if check_publisher_veto(record, profile) is not None:
         return None
+    # Even when the publisher veto did not fire for lack of an identity verifier,
+    # a publisher whose name matches the official list is not a repackager: the
+    # repackaged case is specifically an official package under a DIFFERENT
+    # publisher. Matching the official name here means the identity is merely
+    # unverified, not foreign, so this is not repackaging. (Found on live Ziraat
+    # data, where an official app's publisher had no on-domain website.)
+    if normalize(record.publisher.name) in _normset(profile.official_publishers):
+        return None
     return SignalResult(
         name="package_veto",
         direction=Direction.VETO,
         strength=1.0,
         text=(
             f"Package id '{record.app_id}' is an official package but publisher "
-            f"'{record.publisher.name}' is not the verified official publisher."
+            f"'{record.publisher.name}' is not the official publisher."
         ),
         forced_label=Label.REPACKAGED,
     )

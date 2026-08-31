@@ -228,11 +228,18 @@ Decision: Added review_consistency_signal. It never reads review text and does n
 Rationale: The honest way to use an attacker-controlled signal is to key on the inconsistency the attacker leaves behind, not on the content they author. Verified: fires on the inflated pattern, abstains on legitimate large apps, small apps, missing data, and merely-few-reviews-without-perfect-rating. Metrics unchanged (FP 0%, recall 0.938); it adds coverage without disturbing existing decisions.
 Rejected and why: reading review text/sentiment - attacker-authored, injection surface; trusting raw review count - trivially inflated; sudden-spike detection - needs review timestamps neither the mock nor the scraper provides.
 Status: active
+## K-032: Package veto must not fire when the publisher name is itself official
+Context: On live Ziraat data, an official app (official package id com.bankkart.mobil, publisher "T.C. Ziraat Bankası A.Ş.") was wrongly labelled repackaged and flagged for takedown. Its publisher had no website on an official domain, so the publisher veto did not fire for lack of a verifier (K-014), and the package veto then concluded "official package, non-official publisher" even though the publisher name matched the official list.
+Decision: check_package_veto now returns None when the normalized publisher name matches the official publishers, regardless of verifier. Repackaged is specifically an official package under a DIFFERENT publisher; a matching name means unverified identity, not a foreign repackager.
+Rationale: This was a real false positive against a legitimate app, the exact error the 5% constraint targets. Verified: Bankkart no longer flagged (falls through to triage), while a genuine repackaged (official package, foreign publisher like "ModApps") still fires. Surfaced only on live data, where publishers often lack an on-domain website, which the mock always had.
+Status: active
+
 ---
 
 # Tried and Abandoned
 
 | Tried | Observed | Why dropped / what replaced it | Branch | Phase |
+| Package veto keyed only on 'publisher veto did not fire' | On live data an official app with an unverified official publisher was flagged repackaged | Also skip when publisher name matches official list (K-032) | fix/package-veto-official-name | Triage |
 | First live adapter (strict field access) | Real Play returned types our schema rejected; one bad listing dropped a whole query | Per-record isolation + defensive coercion (K-029) | feat/live-source | Discovery |
 | Word-match official-claim detection | 'Resmi uygulama degildir' (a disclaimer) counted as claiming official | Negation-aware detection (K-022) | feat/tier2 | Triage |
 |---|---|---|---|---|

@@ -1,0 +1,9 @@
+{
+  "brand_name": "Ziraat Bankası",
+  "official_domains": ["ziraatbank.com.tr"],
+  "official_publishers": ["T.C. Ziraat Bankası A.Ş."],
+  "known_official_apps": ["Ziraat Mobil", "Ziraat Bankası OPİ", "Ziraat Çiftçi Platformu"],
+  "sector": "banking",
+  "official_package_ids": ["com.ziraat.opi", "com.ziraat.basakdijital", "com.bankkart.mobil"],
+  "official_permissions": null
+}

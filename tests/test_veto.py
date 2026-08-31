@@ -47,3 +47,23 @@ def test_official_package_under_foreign_publisher_is_repackaged():
 def test_no_veto_for_unrelated_publisher():
     rec = _rec(Publisher(name="Some Studio"), app_id="com.game.x", name="Örnek Oyun")
     assert check_vetoes(rec, PROFILE) is None
+
+
+def test_official_publisher_name_without_verifier_is_not_repackaged():
+    # Found on live Ziraat data: an official app (official package id, official
+    # publisher name) whose publisher had no on-domain website was wrongly
+    # flagged repackaged. A matching publisher name means unverified identity,
+    # not a foreign repackager.
+    rec = _rec(
+        Publisher(name="T.C. Ziraat Bankası A.Ş.", website=None, verified=None),
+        app_id="com.bankkart.mobil",
+    )
+    profile = BrandProfile(
+        brand_name="Ziraat Bankası", official_domains=["ziraatbank.com.tr"],
+        official_publishers=["T.C. Ziraat Bankası A.Ş."],
+        known_official_apps=["Ziraat Mobil"], sector="banking",
+        official_package_ids=["com.bankkart.mobil"],
+    )
+    v = check_vetoes(rec, profile)
+    # Must not be repackaged; either official (if a verifier exists) or no veto.
+    assert v is None or v.forced_label != Label.REPACKAGED
