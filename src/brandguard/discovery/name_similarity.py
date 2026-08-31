@@ -37,20 +37,24 @@ class NameSimilarity:
     contains_brand: bool
     exact_skeleton: bool
     brand_token_coverage: float
+    token_alignment: float
 
     @property
     def is_noise(self) -> bool:
         """True when the name is too dissimilar to be worth further analysis.
 
-        Also treats a name that shares only a small fraction of the brand's
-        tokens as noise: for a multi-word brand, overlapping on one common word
-        (e.g. the Turkish word "örnek") is not resemblance.
+        Uses token alignment (each brand token's best match among the candidate's
+        tokens) to separate a typosquat, which stays close to every brand token,
+        from search noise, which matches one brand token exactly and drops the
+        rest. A whole-string metric like Jaro-Winkler cannot make this split:
+        "Omek Bank" (a threat) and "Örnek Oyun" (noise) score almost the same on
+        it, but differ clearly on alignment.
         """
         if self.contains_brand:
             return False
         if self.jaro_winkler < 0.60:
             return True
-        return self.brand_token_coverage < 0.5
+        return self.brand_token_coverage < 1.0 and self.token_alignment < 0.85
 
 
 def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
@@ -68,8 +72,16 @@ def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
     if brand_toks:
         covered = sum(1 for t in brand_toks if t in cand_toks)
         coverage = covered / len(brand_toks)
+        if cand_toks:
+            alignment = sum(
+                max(distance.JaroWinkler.normalized_similarity(bt, ct) for ct in cand_toks)
+                for bt in brand_toks
+            ) / len(brand_toks)
+        else:
+            alignment = 0.0
     else:
         coverage = 0.0
+        alignment = 0.0
 
     return NameSimilarity(
         jaro_winkler=round(jw, 3),
@@ -78,4 +90,5 @@ def compare_name(candidate: str, brand_name: str) -> NameSimilarity:
         contains_brand=contains,
         exact_skeleton=exact_skeleton,
         brand_token_coverage=round(coverage, 3),
+        token_alignment=round(alignment, 3),
     )

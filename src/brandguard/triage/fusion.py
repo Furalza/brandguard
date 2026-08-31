@@ -140,7 +140,22 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
         return Decision(verdict=verdict, escalate=False, reason="benign")
 
     in_grey = _GREY_LOW <= score < _GREY_HIGH
-    escalate = conflict or in_grey or thin
+
+    # Threat-model rule as an escalation gate: an impersonation call must be
+    # backed by at least one strong attacker-independent signal (a young account,
+    # or permission drift measured against a KNOWN official baseline). A high
+    # score built only from attacker-controllable or weak signals (name shape,
+    # solo publisher, sector-only permission guess) is not decided here; it goes
+    # to T2. This is what separates a confident impersonation from a suspicious
+    # record that merely accumulated weak evidence.
+    strong_independent = any(
+        (s.name == "account_age" and s.direction == Direction.SUSPICIOUS)
+        or (s.name == "permission_drift" and s.meta.get("have_official_baseline"))
+        for s in signals
+    )
+    unbacked_high = score >= _IMPERSONATION_THRESHOLD and not strong_independent
+
+    escalate = conflict or in_grey or thin or unbacked_high
 
     label = Label.UNCERTAIN if escalate else _label_for_score(score)
     confidence = _confidence(score, label, escalate)
@@ -156,7 +171,13 @@ def triage_t0(record: AppRecord, profile: BrandProfile) -> Decision:
         tiers_used=[0],
         conflicts=conflicts,
     )
-    reason = "conflict" if conflict else "grey_zone" if in_grey else "thin_evidence" if thin else "scored"
+    reason = (
+        "conflict" if conflict
+        else "grey_zone" if in_grey
+        else "thin_evidence" if thin
+        else "unbacked_high" if unbacked_high
+        else "scored"
+    )
     return Decision(verdict=verdict, escalate=escalate, reason=reason)
 
 

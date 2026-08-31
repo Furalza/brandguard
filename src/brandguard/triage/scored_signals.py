@@ -156,13 +156,24 @@ def permission_signal(record: AppRecord, profile: BrandProfile) -> SignalResult 
     flagged = [p for p in record.permissions if p in _SENSITIVE_PERMISSIONS and p not in expected]
     if not flagged:
         return None
-    strength = min(0.4 + 0.15 * len(flagged), 0.85)
+    # When the official permission set is known, drift is a strong signal. When
+    # we only have a sector baseline, we cannot be sure a permission is truly
+    # unexpected, so the signal is weaker and cannot by itself cross a threshold.
+    have_official = bool(profile.official_permissions)
+    base = 0.4 if have_official else 0.25
+    step = 0.15 if have_official else 0.1
+    cap = 0.85 if have_official else 0.5
+    strength = min(base + step * len(flagged), cap)
+    confidence_note = "" if have_official else " (no official permission baseline; treated as a weak signal)"
     return SignalResult(
         name="permission_drift",
         direction=Direction.SUSPICIOUS,
         strength=round(strength, 3),
-        text=f"Requests sensitive permissions not expected for a {profile.sector} app: {', '.join(flagged)}.",
-        meta={"flagged": flagged},
+        text=(
+            f"Requests sensitive permissions not expected for a {profile.sector} app: "
+            f"{', '.join(flagged)}{confidence_note}."
+        ),
+        meta={"flagged": flagged, "have_official_baseline": have_official},
     )
 
 
