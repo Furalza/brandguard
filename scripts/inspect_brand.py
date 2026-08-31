@@ -33,11 +33,13 @@ def main() -> None:
     print(f"Top {len(hits)} results for {args.brand!r}:\n")
     print(f"{'publisher':<34}{'app id':<40}title")
     print("-" * 100)
-    publishers = {}
+    publishers: dict[str, int] = {}
     for h in hits:
-        dev = h.get("developer", "?")
+        dev = str(h.get("developer") or "?")
+        app_id = str(h.get("appId") or "?")
+        title = str(h.get("title") or "?")
         publishers[dev] = publishers.get(dev, 0) + 1
-        print(f"{dev[:33]:<34}{h.get('appId', '?')[:39]:<40}{h.get('title', '?')[:30]}")
+        print(f"{dev[:33]:<34}{app_id[:39]:<40}{title[:30]}")
 
     print("\nPublishers seen (a brand's official one usually appears on its core apps):")
     for dev, count in sorted(publishers.items(), key=lambda x: -x[1]):
