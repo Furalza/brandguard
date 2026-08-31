@@ -12,6 +12,7 @@ dependencies = [
 dev = ["pytest>=8.0", "ruff>=0.4"]
 llm = ["anthropic>=0.40", "openai>=1.40"]
 icons = ["imagehash>=4.3", "pillow>=10.0"]
+live = ["google-play-scraper>=1.2"]
 
 [build-system]
 requires = ["setuptools>=68"]

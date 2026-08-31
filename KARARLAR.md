@@ -202,6 +202,13 @@ Decision: Added a crypto brand profile and seven records (in no training or eval
 Rationale: Crypto is a high-value phishing target, so it is a realistic stress test (airdrop scam, seed-phrase lure). The run shows the cascade applying crypto permission expectations (SMS is a red flag for a wallet), catching a homoglyph and a repackaged mirror, and protecting a legitimate price tracker and a themed game from takedown, all on unseen input. The test asserts invariants (no threat labelled benign, no legitimate tool flagged) rather than exact labels, since some records sit on the benign-family boundary only T2 fully resolves.
 Status: active
 
+## K-028: Optional live Google Play source behind the adapter interface
+Context: Test data so far is hand-built. The question "can this run on real data" deserves a concrete answer, and the adapter interface (K-013) was designed exactly so the source could be swapped without touching triage.
+Decision: Added src/brandguard/discovery/live_google_play.py (real scraper results -> AppRecord) and scripts/scrape_and_triage.py (expand queries, scrape, dedupe, triage, list takedown candidates), as an optional ".[live]" dependency. Triage is unchanged; only the source differs.
+Rationale: This proves the mock-to-live path is real, not hypothetical. Live data omits fields our signals would like (publisher account age, verification); those stay None and the signals abstain, which is the missing-vs-zero discipline from schema.py earning its keep on real input. The scraper is unofficial and may be rate-limited or blocked; failures are surfaced per query, not hidden, and the mapping is unit-tested offline while the network call is exercised manually.
+Known limit: without account-age and verification, the strongest attacker-independent signals are weaker on live Play data than on a source that exposes them; recorded as a reason the veto and impersonation gates are more conservative there.
+Status: active
+
 ---
 
 # Tried and Abandoned
