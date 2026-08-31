@@ -1,0 +1,9 @@
+{
+  "brand_name": "KriptoCüzdan",
+  "official_domains": ["kriptocuzdan.com"],
+  "official_publishers": ["KriptoCüzdan Teknoloji A.Ş."],
+  "known_official_apps": ["KriptoCüzdan", "KriptoCüzdan Pro"],
+  "sector": "crypto",
+  "official_package_ids": ["com.kriptocuzdan.wallet", "com.kriptocuzdan.pro"],
+  "official_permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC"]
+}

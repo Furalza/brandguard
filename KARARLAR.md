@@ -196,6 +196,12 @@ Decision: starts_with_brand matches the leading tokens against the brand tokens 
 Rationale: The output exists to give an analyst correct facts; a misleading evidence line is a real defect even when the label is right. Verified: the fix corrects the evidence with zero change to the metric dashboard (FP 0%, recall 0.938, 84% at T0) and no regression on mid-name mentions or ecosystem sub-brands.
 Status: active
 
+## K-027: Generalization demo on an unseen sector (crypto)
+Context: The system should not be memorizing the banking and logistics cases it was built against; generalization needs to be demonstrated, not asserted.
+Decision: Added a crypto brand profile and seven records (in no training or eval set) under data/demo, plus a test locking the safety-critical invariants. Adding the sector required one line in _SECTOR_EXPECTED; everything else is sector-agnostic.
+Rationale: Crypto is a high-value phishing target, so it is a realistic stress test (airdrop scam, seed-phrase lure). The run shows the cascade applying crypto permission expectations (SMS is a red flag for a wallet), catching a homoglyph and a repackaged mirror, and protecting a legitimate price tracker and a themed game from takedown, all on unseen input. The test asserts invariants (no threat labelled benign, no legitimate tool flagged) rather than exact labels, since some records sit on the benign-family boundary only T2 fully resolves.
+Status: active
+
 ---
 
 # Tried and Abandoned

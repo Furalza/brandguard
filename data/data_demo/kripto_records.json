@@ -1,0 +1,72 @@
+[
+  {
+    "app_id": "com.kriptocuzdan.wallet",
+    "source": "google_play",
+    "name": "KriptoCüzdan",
+    "publisher": {"name": "KriptoCüzdan Teknoloji A.Ş.", "account_created": "2019-03-01", "other_app_count": 2, "website": "https://www.kriptocuzdan.com", "verified": true},
+    "description": "Güvenli kripto para cüzdanı. Bitcoin, Ethereum ve 100+ coin.",
+    "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC"],
+    "downloads": 2000000, "rating": 4.4, "review_count": 55000,
+    "published": "2019-05-01", "last_updated": "2026-08-15", "version": "5.2.0"
+  },
+  {
+    "app_id": "com.kriptocuzdan.wallet.v2",
+    "source": "apkpure",
+    "name": "KriptoCüzdan",
+    "publisher": {"name": "Crypto Apps", "account_created": "2026-08-01", "other_app_count": 1, "website": null, "verified": false},
+    "description": "KriptoCüzdan resmi. Cüzdanınızı bağlayın, seed phrase girin.",
+    "permissions": ["INTERNET", "CAMERA", "READ_SMS", "RECEIVE_SMS", "READ_CONTACTS"],
+    "downloads": 3000, "rating": 5.0, "review_count": 12,
+    "published": "2026-08-02", "last_updated": "2026-08-02", "version": "1.0"
+  },
+  {
+    "app_id": "com.kripto.cuzdan.pro",
+    "source": "google_play",
+    "name": "KriptoCüzdаn Pro",
+    "publisher": {"name": "Wallet Solutions", "account_created": "2026-06-15", "other_app_count": 1, "website": null, "verified": false},
+    "description": "Profesyonel kripto cüzdan yönetimi.",
+    "permissions": ["INTERNET", "CAMERA", "SYSTEM_ALERT_WINDOW"],
+    "downloads": 8000, "rating": 4.8, "review_count": 45,
+    "published": "2026-06-20", "last_updated": "2026-08-01", "version": "1.1"
+  },
+  {
+    "app_id": "com.coingecko.tracker",
+    "source": "google_play",
+    "name": "Coin Fiyat Takip",
+    "publisher": {"name": "Market Data Inc", "account_created": "2017-01-01", "other_app_count": 6, "website": "https://coinmarket.example", "verified": false},
+    "description": "KriptoCüzdan dahil tüm cüzdanlardaki coinlerin fiyatını takip edin. Portföy takibi.",
+    "permissions": ["INTERNET"],
+    "downloads": 5000000, "rating": 4.6, "review_count": 120000,
+    "published": "2017-02-01", "last_updated": "2026-07-01", "version": "8.0"
+  },
+  {
+    "app_id": "com.kriptocuzdan.airdrop",
+    "source": "apkmirror",
+    "name": "KriptoCüzdan Airdrop Ödül",
+    "publisher": {"name": "Airdrop Rewards", "account_created": "2026-07-10", "other_app_count": 3, "website": null, "verified": false},
+    "description": "KriptoCüzdan kullanıcılarına özel ücretsiz airdrop. Cüzdanınızı bağlayın, 500 USDT kazanın. Seed phrase ile doğrulayın.",
+    "permissions": ["INTERNET", "READ_SMS", "RECEIVE_SMS", "READ_CONTACTS", "SYSTEM_ALERT_WINDOW"],
+    "downloads": 25000, "rating": 4.7, "review_count": 380,
+    "published": "2026-07-12", "last_updated": "2026-08-10", "version": "2.0"
+  },
+  {
+    "app_id": "com.oyun.kripto",
+    "source": "google_play",
+    "name": "Kripto Savaşları: Strateji Oyunu",
+    "publisher": {"name": "Game Studio TR", "account_created": "2020-05-01", "other_app_count": 14, "website": null, "verified": false},
+    "description": "Blockchain temalı strateji oyunu. Şehrini kur, savaş.",
+    "permissions": ["INTERNET", "VIBRATE"],
+    "downloads": 800000, "rating": 4.3, "review_count": 22000,
+    "published": "2020-06-01", "last_updated": "2026-08-01", "version": "3.5"
+  },
+  {
+    "app_id": "com.kriptocuzdan.wallet",
+    "source": "thirdparty_store",
+    "name": "KriptoCüzdan",
+    "publisher": {"name": "APKFast", "account_created": "2023-01-01", "other_app_count": 200, "website": null, "verified": false},
+    "description": "KriptoCüzdan 5.2.0 mirror download.",
+    "permissions": ["INTERNET", "CAMERA", "USE_BIOMETRIC"],
+    "downloads": 40000, "rating": 4.0, "review_count": 600,
+    "published": "2026-08-16", "last_updated": "2026-08-16", "version": "5.2.0"
+  }
+]
