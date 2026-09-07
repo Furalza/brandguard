@@ -1,0 +1,9 @@
+{
+  "brand_name": "Garanti BBVA",
+  "official_domains": ["garantibbva.com.tr"],
+  "official_publishers": ["T. Garanti Bankasi A.S."],
+  "known_official_apps": ["Garanti BBVA Mobil Bankacılık", "BonusFlaş"],
+  "sector": "banking",
+  "official_package_ids": ["com.garanti.bonusapp"],
+  "official_permissions": null
+}

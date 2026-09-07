@@ -1,0 +1,9 @@
+scanned_at,brand,platform,candidates,takedown_candidates,adjudicator,result_file
+2026-09-07T20:52:49.751154+00:00,Akbank,google_play,9,0,OpenAIAdjudicator,2026-09-07T20-52-49.751154Z__akbank__google_play.json
+2026-09-07T20:53:03.129997+00:00,Garanti BBVA,google_play,10,0,OpenAIAdjudicator,2026-09-07T20-53-03.129997Z__garanti_bbva__google_play.json
+2026-09-07T20:53:25.228224+00:00,Halkbank,google_play,7,0,OpenAIAdjudicator,2026-09-07T20-53-25.228224Z__halkbank__google_play.json
+2026-09-07T20:53:34.335176+00:00,Türkiye İş Bankası,google_play,10,0,OpenAIAdjudicator,2026-09-07T20-53-34.335176Z__türkiye_i_ş_bankası__google_play.json
+2026-09-07T20:53:46.461078+00:00,QNB,google_play,10,0,OpenAIAdjudicator,2026-09-07T20-53-46.461078Z__qnb__google_play.json
+2026-09-07T20:54:02.759366+00:00,VakıfBank,google_play,6,0,OpenAIAdjudicator,2026-09-07T20-54-02.759366Z__vakıfbank__google_play.json
+2026-09-07T20:54:14.619934+00:00,Yapı Kredi,google_play,9,0,OpenAIAdjudicator,2026-09-07T20-54-14.619934Z__yapı_kredi__google_play.json
+2026-09-07T20:54:28.623765+00:00,Ziraat Bankası,google_play,5,0,OpenAIAdjudicator,2026-09-07T20-54-28.623765Z__ziraat_bankası__google_play.json

@@ -1,0 +1,9 @@
+{
+  "brand_name": "Halkbank",
+  "official_domains": ["halkbank.com.tr"],
+  "official_publishers": ["Türkiye Halk Bankası A.Ş."],
+  "known_official_apps": ["Halkbank Mobil", "Halkbank ÇB", "Paraf Mobil"],
+  "sector": "banking",
+  "official_package_ids": ["com.halkbank.childbanking", "com.halkbank.parafmobil"],
+  "official_permissions": null
+}

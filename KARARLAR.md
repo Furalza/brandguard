@@ -234,6 +234,13 @@ Decision: check_package_veto now returns None when the normalized publisher name
 Rationale: This was a real false positive against a legitimate app, the exact error the 5% constraint targets. Verified: Bankkart no longer flagged (falls through to triage), while a genuine repackaged (official package, foreign publisher like "ModApps") still fires. Surfaced only on live data, where publishers often lack an on-domain website, which the mock always had.
 Status: active
 
+## K-033: Watchlist scanning with timestamped, tracked results
+Context: Beyond one-off runs, a real DRP system scans many brands regularly and tracks change over time. We wanted the same: several major banks, timestamped results, the platform recorded, and run-to-run comparison.
+Decision: scripts/watchlist_scan.py scans every profile in data/watchlist against a named platform (google_play), writes one timestamped JSON per brand (results/<UTC>__<brand>__<platform>.json), and appends a summary row to results/run_log.csv. scripts/watchlist_diff.py compares two scans (new, gone, changed verdicts). GitHub policy: raw result JSON is git-ignored (real publisher data, grows over time), only run_log.csv (non-sensitive summary) and a hand-picked demo run under docs/sample_runs are committed.
+Rationale: The timestamp answers "when did we look", the platform field answers "where", and the diff answers "what changed". Committing the summary but not the raw data shows a real scanning history without exposing real publisher data or bloating the repo. Live data is fetched via the google-play-scraper source (K-028), so each scan is a snapshot of that moment, which is exactly why timestamping matters.
+Known limit: Google Play is well policed, so scans of real banks are mostly official/third_party; the value is demonstrating live, multi-brand, timestamped, trackable scanning, not that a takedown target will always appear.
+Status: active
+
 ---
 
 # Tried and Abandoned

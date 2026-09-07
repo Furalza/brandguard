@@ -1,0 +1,9 @@
+{
+  "brand_name": "VakıfBank",
+  "official_domains": ["vakifbank.com.tr"],
+  "official_publishers": ["Türkiye Vakıflar Bankası T.A.O."],
+  "known_official_apps": ["VakıfBank Mobil Bankacılık", "VakıfBank FideMobil", "Vibox"],
+  "sector": "banking",
+  "official_package_ids": ["com.vakifbank.fide", "com.vakifbank.dijitalkumbara"],
+  "official_permissions": null
+}

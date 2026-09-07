@@ -1,0 +1,9 @@
+{
+  "brand_name": "Akbank",
+  "official_domains": ["akbank.com"],
+  "official_publishers": ["AKBANK"],
+  "known_official_apps": ["Akbank Mobil", "Juzdan", "Akbank Kariyer", "Akbank Cebe POS"],
+  "sector": "banking",
+  "official_package_ids": ["com.akbank.android.apps.axess", "com.akbank.mobile.aday", "com.akbank.android.apps.cebepos"],
+  "official_permissions": null
+}

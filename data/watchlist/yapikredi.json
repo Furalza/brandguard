@@ -1,0 +1,9 @@
+{
+  "brand_name": "Yapı Kredi",
+  "official_domains": ["yapikredi.com.tr"],
+  "official_publishers": ["Yapı ve Kredi Bankası A.Ş."],
+  "known_official_apps": ["Yapı Kredi Mobil", "World Mobil", "Yapı Kredi POS Cepte"],
+  "sector": "banking",
+  "official_package_ids": ["com.ykb.avm", "com.ykb.softpos"],
+  "official_permissions": null
+}

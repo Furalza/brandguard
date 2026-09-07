@@ -1,0 +1,9 @@
+{
+  "brand_name": "Türkiye İş Bankası",
+  "official_domains": ["isbank.com.tr"],
+  "official_publishers": ["Türkiye İş Bankası A.Ş."],
+  "known_official_apps": ["İşCep", "Maximum Mobil", "İşim Kolay", "İşPOS"],
+  "sector": "banking",
+  "official_package_ids": ["com.pozitron.iscep", "com.softtech.parakod", "com.isbank.isimkolay", "com.isbank.isyerim"],
+  "official_permissions": null
+}

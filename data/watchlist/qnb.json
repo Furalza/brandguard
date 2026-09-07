@@ -1,0 +1,9 @@
+{
+  "brand_name": "QNB",
+  "official_domains": ["qnb.com.tr"],
+  "official_publishers": ["QNB Türkiye", "QNB"],
+  "known_official_apps": ["QNB Mobil", "QNB Mobile", "QNB Dijital Köprü"],
+  "sector": "banking",
+  "official_package_ids": ["com.vipera.ts.starter.QNB", "com.dijitalkopru.qnb"],
+  "official_permissions": null
+}

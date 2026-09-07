@@ -5,31 +5,36 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
- 
+
 # Packaging / build artifacts
 *.egg-info/
 build/
 dist/
- 
+
 # Virtual environments
 .venv/
 venv/
 env/
- 
+
 # Secrets and local configuration
 .env
 .env.*
 !.env.example
- 
+
 # Locked holdout: never committed, used once for final measurement
 data/testset/locked/
- 
+
 # Generated data (reproducible from scripts; not source)
 data/mock_icons/*.png
 data/cache/
- 
+
 # Editor and OS noise
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Watchlist raw results: real publisher data, grows over time. Keep only the
+# summary log and the folder README (see K-033).
+results/*.json
+!results/run_log.csv
