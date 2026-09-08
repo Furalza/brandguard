@@ -246,6 +246,7 @@ Status: active
 # Tried and Abandoned
 
 | Tried | Observed | Why dropped / what replaced it | Branch | Phase |
+| CSV run log in plain utf-8 | Turkish bank names looked garbled in some Windows viewers | Switched to utf-8-sig (BOM) so Excel and PowerShell read it correctly | feat/watchlist | Watchlist |
 | Package veto keyed only on 'publisher veto did not fire' | On live data an official app with an unverified official publisher was flagged repackaged | Also skip when publisher name matches official list (K-032) | fix/package-veto-official-name | Triage |
 | First live adapter (strict field access) | Real Play returned types our schema rejected; one bad listing dropped a whole query | Per-record isolation + defensive coercion (K-029) | feat/live-source | Discovery |
 | Word-match official-claim detection | 'Resmi uygulama degildir' (a disclaimer) counted as claiming official | Negation-aware detection (K-022) | feat/tier2 | Triage |

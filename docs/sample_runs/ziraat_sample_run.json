@@ -1,0 +1,55 @@
+{
+  "brand": "Ziraat Bankası",
+  "platform": "google_play",
+  "scanned_at": "2026-09-07T20:54:28.623765+00:00",
+  "adjudicator": "OpenAIAdjudicator",
+  "candidates": 5,
+  "takedown_candidates": 0,
+  "verdicts": [
+    {
+      "app_id": "com.bankkart.mobil",
+      "source": "google_play_live",
+      "label": "unrelated",
+      "confidence": 0.5,
+      "evidence": [
+        "App name 'Bankkart Mobil' does not resemble the brand."
+      ]
+    },
+    {
+      "app_id": "com.matriksmobile.android.ziraatTrader",
+      "source": "google_play_live",
+      "label": "third_party_legitimate",
+      "confidence": 0.5,
+      "evidence": [
+        "App name 'Ziraat Trader' does not resemble the brand."
+      ]
+    },
+    {
+      "app_id": "com.ziraat.opi",
+      "source": "google_play_live",
+      "label": "official",
+      "confidence": 0.95,
+      "evidence": [
+        "Publisher 'T.C. Ziraat Bankası A.Ş.' matches the official list and is corroborated by publisher website on an official domain."
+      ]
+    },
+    {
+      "app_id": "com.ziraat.dinamikmobil",
+      "source": "google_play_live",
+      "label": "third_party_legitimate",
+      "confidence": 0.5,
+      "evidence": [
+        "App name 'Ziraat Dinamik Mobil' does not resemble the brand."
+      ]
+    },
+    {
+      "app_id": "com.ziraatkatilim.mobilebanking",
+      "source": "google_play_live",
+      "label": "third_party_legitimate",
+      "confidence": 0.5,
+      "evidence": [
+        "App name 'Ziraat Katılım' does not resemble the brand."
+      ]
+    }
+  ]
+}

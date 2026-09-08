@@ -105,7 +105,7 @@ def main() -> None:
     log_path = args.results / "run_log.csv"
     new_log = not log_path.exists()
 
-    with log_path.open("a", newline="", encoding="utf-8") as log_file:
+    with log_path.open("a", newline="", encoding="utf-8-sig") as log_file:
         writer = csv.writer(log_file)
         if new_log:
             writer.writerow(
