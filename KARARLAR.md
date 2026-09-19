@@ -253,6 +253,19 @@ Decision: check_package_veto returns None when the normalized publisher name is 
 Rationale: An absent identity cannot justify a takedown. Verified across four scenarios: empty publisher no longer flagged; a genuine repackaged (official package, real foreign publisher like "ModApps") still fires; official name without verifier stays unflagged; official name with a domain verifier is official. Surfaced only on live search data, where hits have no publisher, which the mocks and Play always had.
 Status: active
 
+## K-036: Website-impersonation discovery, phase 2a (domain similarity only)
+Context: Phishing sites live on lookalike domains, often a bigger problem than fake apps. The CTO's Serper direction supports this, and the goal was to cover every avenue.
+Decision: Added domain_variants.py (generate typosquat/leet/lure-word/alt-TLD variants of the official domain) and website_hunt.py (classify a domain against the official ones by similarity: official, lookalike, mentions, unrelated; discover via generated variants plus Serper searches off the official domain). DomainFinding carries confirmed_live to separate a domain a search actually returned from a generated name whose registration is unknown. WHOIS/SSL/page-content are defined as an extension point (WebsiteSignal) but NOT implemented; this phase uses only domain similarity.
+Rationale: Discovery is broad (a missing variant is a domain we could never flag) but triage is honest about its one signal: a string-only comparison flags a lookalike for review, it does not assert phishing. A lookalike requires both high similarity AND the distinctive brand token, so a rival bank sharing "bank" is not flagged, while a leet-distorted brand prefix (z1raatbank) still is. confirmed_live prevents overclaiming.
+Rejected and why: Implementing WHOIS/SSL/content now - each is a separate integration, a project-sized extension that would pull effort off the core. Flagging every generated variant as a hit - dishonest, registration is unknown.
+Status: active
+
+## K-037: Domain verdicts are separate from app labels
+Context: A domain compared only by string is not the same object as an app with publisher, permissions and age.
+Decision: website_hunt uses its own DomainVerdict (official/lookalike/mentions/unrelated), not the app Label.
+Rationale: Using the app label would overclaim certainty the domain signals do not support. Separate vocabularies keep each pipeline honest about what its evidence proves.
+Status: active
+
 ---
 
 # Tried and Abandoned
