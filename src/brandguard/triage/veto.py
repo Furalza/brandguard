@@ -95,7 +95,14 @@ def check_package_veto(record: AppRecord, profile: BrandProfile) -> SignalResult
     # publisher. Matching the official name here means the identity is merely
     # unverified, not foreign, so this is not repackaging. (Found on live Ziraat
     # data, where an official app's publisher had no on-domain website.)
-    if normalize(record.publisher.name) in _normset(profile.official_publishers):
+    #
+    # An EMPTY publisher name is likewise not a foreign repackager: it means the
+    # identity is simply unknown (e.g. a Google search hit that carries no
+    # publisher field). Unknown identity is at most uncertain, never a takedown
+    # on its own. (Found on live Serper data, where search results have no
+    # publisher.)
+    normalized_publisher = normalize(record.publisher.name)
+    if not normalized_publisher or normalized_publisher in _normset(profile.official_publishers):
         return None
     return SignalResult(
         name="package_veto",

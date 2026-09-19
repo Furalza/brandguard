@@ -241,6 +241,18 @@ Rationale: The timestamp answers "when did we look", the platform field answers 
 Known limit: Google Play is well policed, so scans of real banks are mostly official/third_party; the value is demonstrating live, multi-brand, timestamped, trackable scanning, not that a takedown target will always appear.
 Status: active
 
+## K-034: Serper source for third-party app hunting via Google search
+Context: Google Play is well policed, so real impersonations live on third-party APK sites, not Play. The CTO suggested driving discovery through Google search (Serper).
+Decision: Added a Serper source (src/brandguard/discovery/serper_source.py) that runs APK-hunting Google dorks (excluding Play), turns each organic result into an AppRecord by inferring a package id from the URL and a name from the title, and feeds them through the existing cascade. Behind a SerperClient protocol with a mock for tests; optional ".[serper]" extra; SERPER_API_KEY read from .env.
+Rationale: This looks where impersonations actually live. A search hit is far poorer than a Play listing (no publisher, permissions, age), so those stay None and the system is deliberately more conservative. The adapter interface (K-013) made this a new source with zero change to triage. A live Ziraat run returned 36 candidates across Aptoide, APKMirror, Uptodown and others, all correctly triaged as third_party or unrelated except one bug (K-035).
+Status: active
+
+## K-035: Empty publisher is unknown identity, not a foreign repackager
+Context: On live Serper data, an official Ziraat package (com.ziraat.basakdijital) was flagged repackaged and takedown, because a Google search hit carries no publisher, so the package veto read the empty publisher as "not the official one". A false positive against a real official app, the exact error the 5% cap targets.
+Decision: check_package_veto returns None when the normalized publisher name is empty OR matches the official list. Empty means unknown identity; unknown is at most uncertain, never a takedown. This extends K-032 (matching-but-unverified name) to the empty case.
+Rationale: An absent identity cannot justify a takedown. Verified across four scenarios: empty publisher no longer flagged; a genuine repackaged (official package, real foreign publisher like "ModApps") still fires; official name without verifier stays unflagged; official name with a domain verifier is official. Surfaced only on live search data, where hits have no publisher, which the mocks and Play always had.
+Status: active
+
 ---
 
 # Tried and Abandoned

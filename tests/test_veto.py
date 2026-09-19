@@ -67,3 +67,18 @@ def test_official_publisher_name_without_verifier_is_not_repackaged():
     v = check_vetoes(rec, profile)
     # Must not be repackaged; either official (if a verifier exists) or no veto.
     assert v is None or v.forced_label != Label.REPACKAGED
+
+
+def test_empty_publisher_with_official_package_is_not_repackaged():
+    # Found on live Serper data: a Google search hit for an official package
+    # carries no publisher field. An empty publisher means unknown identity, not
+    # a foreign repackager, so it must not be flagged for takedown.
+    rec = _rec(Publisher(name=""), app_id="com.ziraat.opi")
+    profile = BrandProfile(
+        brand_name="Ziraat Bankası", official_domains=["ziraatbank.com.tr"],
+        official_publishers=["T.C. Ziraat Bankası A.Ş."],
+        known_official_apps=["Ziraat Mobil"], sector="banking",
+        official_package_ids=["com.ziraat.opi"],
+    )
+    v = check_vetoes(rec, profile)
+    assert v is None or v.forced_label != Label.REPACKAGED
