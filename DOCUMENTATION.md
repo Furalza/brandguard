@@ -106,7 +106,7 @@ python run.py --profile data/profiles/ornek_bank.json \
               --records data/testset/ornek_bank.json --pretty
 
 python scripts/evaluate.py         # metrics
-pytest                             # 109 tests
+pytest                             # 118 tests
 ```
 
 The LLM tier is optional. With an `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (env

@@ -122,7 +122,7 @@ K-032.
 ## Tests
 
 ```bash
-pytest        # 109 tests
+pytest        # 118 tests
 ruff check .
 ```
 
