@@ -294,6 +294,13 @@ Rationale: A phishing domain appears in CT logs the moment it obtains TLS, befor
 Rejected and why: Relying on search alone - too shallow, returns the clean first page. Paid threat-intel feeds - unnecessary when CT is free and deeper.
 Status: active
 
+## K-042: Unified hunt engine with timestamped, comparable runs across all sources
+Context: Four discovery sources (Play, Serper, website, crt.sh) had each grown its own script printing to the screen. That is not how a DRP platform operates: it needs one interface, and every run recorded and comparable over time. The watchlist already did this for Play; the other sources did not.
+Decision: Added hunt_engine.py (one run_source over all sources returning a uniform RunResult, plus record_run writing a timestamped JSON per run and a shared results/run_log.csv) and hunt.py (python -m brandguard.hunt --brand X --source crtsh,website). Every run is keyed by ISO UTC timestamp, brand and source, so runs compare across sources and over time; the existing diff tool works on any two result files. Raw JSON is git-ignored, the summary log is committed, same convention as the watchlist (K-033).
+Rationale: A single operational entry point is the expert-grade shape, not four divergent scripts. Recording every run with a timestamp is what makes exposure trackable ("this lookalike was not here last week"). The per-source runners are thin wrappers over the discovery modules, so the engine stays agnostic and each source keeps its own logic.
+Rejected and why: Patching record-keeping into each of the four scripts - divergent code, four places to maintain. Leaving runs unrecorded - no way to compare over time, which is the point of monitoring.
+Status: active
+
 ---
 
 # Tried and Abandoned
