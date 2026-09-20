@@ -32,21 +32,58 @@ def _clean(name: str) -> str:
     return name.split("\n")[0].strip()
 
 
-def search_crtsh(brand_token: str, *, timeout: float = 30.0) -> list[CtDomain]:
-    """Return distinct domains from crt.sh whose certificate names contain the token.
-
-    ``brand_token`` should be the distinctive part of the brand (e.g. "ziraat",
-    "binance"), not the full domain, so lookalikes on other TLDs and with extra
-    words are caught. Fails soft to an empty list on any network or parse error.
-    """
+def _fetch_crtsh(brand_token: str, timeout: float) -> list[dict] | None:
+    """One crt.sh request. Returns parsed rows, [] for a definite empty result,
+    or None to signal a retryable condition (rate limit, timeout, bad body)."""
     import requests
 
     url = f"https://crt.sh/?q=%25{brand_token}%25&output=json"
     try:
         response = requests.get(url, timeout=timeout, headers={"User-Agent": "brandguard/1.0"})
-        response.raise_for_status()
-        rows = response.json()
-    except (requests.RequestException, json.JSONDecodeError, ValueError):
+    except requests.RequestException:
+        return None  # network hiccup: retryable
+    if response.status_code == 429:
+        return None  # rate limited: retryable
+    if response.status_code != 200:
+        return []     # a real non-OK status: treat as empty, not retryable
+    body = response.text.strip()
+    if not body:
+        return None   # crt.sh often returns an empty body under load: retryable
+    try:
+        return response.json()
+    except (json.JSONDecodeError, ValueError):
+        return None   # partial/garbled body under load: retryable
+
+
+def search_crtsh(
+    brand_token: str,
+    *,
+    timeout: float = 30.0,
+    retries: int = 3,
+    base_delay: float = 2.0,
+) -> list[CtDomain]:
+    """Return distinct domains from crt.sh whose certificate names contain the token.
+
+    ``brand_token`` should be the distinctive part of the brand (e.g. "ziraat",
+    "binance"), not the full domain, so lookalikes on other TLDs and with extra
+    words are caught.
+
+    crt.sh is a free service that frequently rate-limits or returns an empty body
+    under load. Retryable conditions (429, timeout, empty/garbled body) are
+    retried with exponential backoff (base_delay, x2 each time); a definite empty
+    result or a real error status is returned as an empty list. This keeps the
+    common "temporarily throttled" case from looking like "no lookalikes exist".
+    """
+    import time
+
+    rows: list[dict] | None = None
+    for attempt in range(retries + 1):
+        rows = _fetch_crtsh(brand_token, timeout)
+        if rows is not None:
+            break                       # got a definite answer (data or real empty)
+        if attempt < retries:
+            time.sleep(base_delay * (2 ** attempt))   # 2s, 4s, 8s
+    if not rows:                        # None after all retries, or genuinely empty
         return []
 
     seen: set[str] = set()

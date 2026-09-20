@@ -301,6 +301,13 @@ Rationale: A single operational entry point is the expert-grade shape, not four 
 Rejected and why: Patching record-keeping into each of the four scripts - divergent code, four places to maintain. Leaving runs unrecorded - no way to compare over time, which is the point of monitoring.
 Status: active
 
+## K-043: crt.sh retry with exponential backoff, distinguishing throttling from empty
+Context: On a live run, crt.sh returned nothing for both Binance and PayPal at once, which the old code reported as "0 candidates", the same as "no lookalikes exist". crt.sh is a free service that frequently rate-limits or returns an empty body under load, so a single shot conflates "temporarily throttled" with "genuinely empty".
+Decision: search_crtsh now separates retryable conditions (HTTP 429, timeout, empty or garbled body) from a definite answer (data, or a real non-OK status), and retries the retryable ones with exponential backoff (2s, 4s, 8s, three attempts). A definite empty or a real error returns an empty list without pointless retries.
+Rationale: This is standard resilience for a flaky third-party service and stops a transient throttle from looking like a clean result. Verified with mocked responses: recovers after two 429s, soft-empties after repeated empty bodies without hanging, does not retry on immediate success, and does not retry a real 503. Backoff is bounded so a run never stalls indefinitely.
+Rejected and why: Retrying forever - could hang a run. Treating every non-200 as retryable - wastes time on real errors that will not change.
+Status: active
+
 ---
 
 # Tried and Abandoned

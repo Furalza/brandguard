@@ -33,7 +33,8 @@ def test_two_runs_are_separate_comparable_files():
 
 
 def test_unknown_source_rejected():
-    from brandguard.schema import BrandProfile
     import pytest
+
+    from brandguard.schema import BrandProfile
     with pytest.raises(ValueError):
         run_source(BrandProfile(brand_name="X"), "no_such_source")
