@@ -63,3 +63,23 @@ def test_search_hit_is_confirmed_live():
                              include_generated_variants=False)
     live = [f for f in findings if f.confirmed_live]
     assert live and live[0].domain == "ziraatbank-giris.com"
+
+
+def test_subdomain_of_official_is_not_impersonation():
+    # api.paypal.com is PayPal's own infrastructure, not a lookalike.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("api.paypal.com", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.OFFICIAL
+
+
+def test_non_domain_string_is_rejected():
+    # crt.sh sometimes returns an org name like "paypal, inc." in the name field.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("paypal, inc.", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.UNRELATED
+
+
+def test_real_phishing_shape_is_lookalike():
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("paypal-login.info", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.LOOKALIKE

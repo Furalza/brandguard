@@ -9,3 +9,7 @@ scanned_at,brand,platform,candidates,takedown_candidates,adjudicator,result_file
 2026-09-07T21:16:53.635647+00:00,Ziraat Bankası,google_play,5,0,OpenAIAdjudicator,2026-09-07T21-16-53.635647Z__ziraat_bankası__google_play.json
 2026-09-20T20:29:38.626549+00:00,Binance,crtsh,0,0,2026-09-20T20-29-38.626549Z__binance__crtsh.json
 2026-09-20T20:31:08.540489+00:00,PayPal,crtsh,0,0,2026-09-20T20-31-08.540489Z__paypal__crtsh.json
+2026-09-20T20:47:50.301805+00:00,PayPal,crtsh,194,1,2026-09-20T20-47-50.301805Z__paypal__crtsh.json
+2026-09-20T20:48:24.005119+00:00,Binance,crtsh,50,20,2026-09-20T20-48-24.005119Z__binance__crtsh.json
+2026-09-20T20:49:33.775041+00:00,Netflix,crtsh,0,0,2026-09-20T20-49-33.775041Z__netflix__crtsh.json
+2026-09-20T20:51:10.527052+00:00,PayPal,crtsh,13,0,2026-09-20T20-51-10.527052Z__paypal__crtsh.json

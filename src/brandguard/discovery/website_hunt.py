@@ -21,7 +21,6 @@ from typing import Protocol
 from brandguard.discovery.domain_variants import expand_domain
 from brandguard.discovery.normalize import normalize
 
-
 # A lookalike verdict, separate from the app Label because the signals and the
 # meaning differ. An app can be "impersonation"; a domain we have only compared
 # by string is at most a "lookalike" until richer signals confirm it.
@@ -86,6 +85,28 @@ def _token_in_label(token: str, label: str) -> bool:
     return False
 
 
+import re as _re
+
+# A hostname: labels of letters/digits/hyphens separated by dots, with a TLD.
+# Rejects certificate organization strings like "paypal, inc." that crt.sh
+# sometimes returns in the name field.
+_VALID_HOST = _re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
+
+
+def _is_valid_domain(host: str) -> bool:
+    return bool(_VALID_HOST.match(host))
+
+
+def _is_subdomain_of(host: str, official: str) -> bool:
+    """True if host is the official domain or a subdomain of it.
+
+    api.paypal.com and stage.paypal.com are PayPal's own infrastructure, not
+    impersonations; they end with ".paypal.com".
+    """
+    host, official = host.lower(), official.lower()
+    return host == official or host.endswith("." + official)
+
+
 def classify_domain(candidate: str, profile_domains: list[str], brand_name: str) -> DomainFinding:
     """Classify one candidate domain against the official domains and brand.
 
@@ -95,10 +116,24 @@ def classify_domain(candidate: str, profile_domains: list[str], brand_name: str)
     anything else is unrelated.
     """
     cand = _label_of(candidate)
+
+    # Reject non-domain strings (crt.sh sometimes returns org names like
+    # "paypal, inc." in the name field). These are noise, not candidates.
+    if not _is_valid_domain(cand):
+        return DomainFinding(cand, DomainVerdict.UNRELATED, 0.0,
+                             ["Not a valid domain name."], "", confirmed_live=False)
+
     official_set = {d.lower() for d in profile_domains}
     if cand in official_set:
         return DomainFinding(cand, DomainVerdict.OFFICIAL, 1.0,
                              ["Exact match to an official domain."], "", confirmed_live=False)
+
+    # A subdomain of an official domain is the brand's own infrastructure
+    # (api.paypal.com, stage.paypal.com), not an impersonation.
+    if any(_is_subdomain_of(cand, d) for d in profile_domains):
+        return DomainFinding(cand, DomainVerdict.OFFICIAL, 1.0,
+                             ["Subdomain of an official domain (brand's own infrastructure)."],
+                             "", confirmed_live=False)
 
     best = max((_domain_similarity(cand, d) for d in profile_domains), default=0.0)
     # Does the domain label carry the brand's distinctive token, allowing for

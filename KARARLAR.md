@@ -308,6 +308,13 @@ Rationale: This is standard resilience for a flaky third-party service and stops
 Rejected and why: Retrying forever - could hang a run. Treating every non-200 as retryable - wastes time on real errors that will not change.
 Status: active
 
+## K-044: Exclude a brand's own subdomains and non-domain strings from lookalikes
+Context: A live crt.sh run for PayPal returned 194 candidates, but almost all were PayPal's own infrastructure subdomains (api.paypal.com, stage.paypal.com, sandbox.paypal.com), and one "lookalike" was the certificate organization string "paypal, inc." rather than a domain. Real impersonations were buried under the brand's own hostnames.
+Decision: classify_domain now, before similarity, (1) rejects strings that are not valid hostnames (a regex for label.label.tld), so org names like "paypal, inc." become unrelated, and (2) marks any subdomain of an official domain (host == official or endswith "." + official) as official, since api.paypal.com is the brand's own infrastructure, not an impersonation.
+Rationale: CT logs are dominated by a brand's own subdomains and occasionally carry non-domain fields; without these filters the lookalike queue is buried in noise. A subdomain of the official domain is definitionally the brand's own, so it cannot be an impersonation. Verified: PayPal's own subdomains become official, "paypal, inc." becomes unrelated, and real phishing shapes (paypal-login.info, paypa1.com) remain lookalike.
+Rejected and why: Keeping subdomains as mentions - still clutters the review queue with the brand's own hosts. Trusting the crt.sh name field as always a domain - it is not.
+Status: active
+
 ---
 
 # Tried and Abandoned
