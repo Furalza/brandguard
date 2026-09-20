@@ -202,3 +202,63 @@ def hunt_websites(
                 )
 
     return list(findings.values())
+
+
+@dataclass(frozen=True)
+class EnrichedFinding:
+    """A DomainFinding plus D1 evidence and a review priority.
+
+    Priority orders the analyst's queue: a live lookalike that is also young or
+    freshly certificated is high; an old, established one is low (likely a
+    legitimate subsidiary). D1 runs only on live lookalikes, keeping the cost on
+    the few domains where it can change the picture.
+    """
+
+    finding: DomainFinding
+    domain_age_days: int | None
+    cert_age_days: int | None
+    priority: str
+    evidence: list[str]
+
+
+def enrich_live_lookalikes(findings: list[DomainFinding]) -> list[EnrichedFinding]:
+    """Run D1 (WHOIS age, SSL) on live lookalikes and assign a review priority.
+
+    Non-lookalike or non-live findings are passed through at low priority with no
+    network cost. This is the domain cascade's second tier.
+    """
+    from brandguard.discovery.domain_signals import cert_age, whois_age
+
+    out: list[EnrichedFinding] = []
+    for f in findings:
+        if f.verdict != DomainVerdict.LOOKALIKE or not f.confirmed_live:
+            out.append(EnrichedFinding(f, None, None, "low", list(f.evidence)))
+            continue
+
+        age = whois_age(f.domain)
+        cert = cert_age(f.domain)
+        evidence = list(f.evidence)
+        young_domain = age is not None and age.suspicious
+        young_cert = cert is not None and cert.suspicious
+        if age is not None:
+            evidence.append(age.evidence)
+        if cert is not None:
+            evidence.append(cert.evidence)
+
+        if young_domain:
+            priority = "high"
+        elif young_cert and age is None:
+            priority = "medium"
+        elif age is not None and not young_domain:
+            priority = "low"
+        else:
+            priority = "medium"
+
+        out.append(EnrichedFinding(
+            f,
+            age.age_days if age else None,
+            cert.age_days if cert else None,
+            priority,
+            evidence,
+        ))
+    return out

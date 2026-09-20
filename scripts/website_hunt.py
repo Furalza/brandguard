@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 from brandguard.discovery.serper_source import get_serper_client
-from brandguard.discovery.website_hunt import DomainVerdict, hunt_websites
+from brandguard.discovery.website_hunt import DomainVerdict, enrich_live_lookalikes, hunt_websites
 from brandguard.schema import BrandProfile
 
 _ORDER = {DomainVerdict.LOOKALIKE: 0, DomainVerdict.MENTIONS_BRAND: 1,
@@ -39,13 +39,20 @@ def main() -> None:
     findings = hunt_websites(profile.brand_name, profile.official_domains,
                              client=client, num=args.num, max_queries=args.max_queries)
 
-    findings.sort(key=lambda f: (_ORDER.get(f.verdict, 9), -f.similarity, not f.confirmed_live))
-    print(f"{len(findings)} candidate domains\n")
-    for f in findings:
+    enriched = enrich_live_lookalikes(findings)
+    prio_order = {"high": 0, "medium": 1, "low": 2}
+    enriched.sort(key=lambda e: (
+        prio_order[e.priority],
+        _ORDER.get(e.finding.verdict, 9),
+        -e.finding.similarity,
+    ))
+    print(f"{len(enriched)} candidate domains (D1 enriched live lookalikes)\n")
+    for e in enriched:
+        f = e.finding
         live = "LIVE" if f.confirmed_live else "generated"
-        flag = "  [REVIEW]" if f.verdict == DomainVerdict.LOOKALIKE and f.confirmed_live else ""
-        print(f"{f.verdict.value:<12}{f.similarity:<7}{live:<11}{f.domain}{flag}")
-        for line in f.evidence:
+        tag = f"  [REVIEW prio={e.priority}]" if f.verdict == DomainVerdict.LOOKALIKE and f.confirmed_live else ""
+        print(f"{f.verdict.value:<12}{f.similarity:<7}{live:<11}{f.domain}{tag}")
+        for line in e.evidence:
             print(f"    - {line}")
 
 

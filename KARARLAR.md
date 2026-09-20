@@ -266,6 +266,20 @@ Decision: website_hunt uses its own DomainVerdict (official/lookalike/mentions/u
 Rationale: Using the app label would overclaim certainty the domain signals do not support. Separate vocabularies keep each pipeline honest about what its evidence proves.
 Status: active
 
+## K-038: Domain cascade D1 (WHOIS age + SSL), soft-failing, live lookalikes only
+Context: Phase 2a flagged lookalike domains by string similarity alone. The strongest attacker-independent website signal is registration age (a phishing domain is days old), mirroring account age on apps.
+Decision: Added domain_signals.py (whois_age via python-whois, cert_age via stdlib ssl) and enrich_live_lookalikes in website_hunt.py. D1 runs ONLY on live lookalikes (confirmed_live and verdict lookalike), assigns a review priority (young domain high, established low, unknown medium), and both signals fail soft to None on any WHOIS/TLS error. Optional ".[whois]" extra; SSL uses the standard library.
+Rationale: Registration age is the domain equivalent of account age and orders the analyst queue so young lookalikes surface first. Running D1 only on live lookalikes keeps the network cost on the few domains where it matters, the same cascade economics as the app tiers. Soft failure is essential: WHOIS is inconsistent across TLDs (especially .com.tr) and rate-limited, so an unavailable signal is absent, never guessed.
+Rejected and why: Running WHOIS/SSL on every candidate - wasteful, most are generated names with no registration. A paid WHOIS API - unnecessary for age alone, which the free library usually provides.
+Status: active
+
+## K-039: Domain cascade D2 (AI adjudicator), minimal, injection-safe
+Context: Some live lookalikes remain ambiguous after D1 (young or unknown age). A language model can judge these, but only carefully.
+Decision: Added domain_adjudicator.py: a DomainAdjudicator protocol with a deterministic RuleDomainAdjudicator default and an LLM-backed path reusing the app-side provider selection. The model receives only a structured DomainCase (similarity, ages, issuer, booleans), never a raw page; fetching the live page is optional and off by default, since connecting to a suspected phishing site is sensitive. D2 runs only on the few D1 could not settle.
+Rationale: This is the domain mirror of app T2 (K-021): ports-and-adapters, deterministic fallback so it runs without a key, structured-only input to close the injection surface, and advisory output rather than automated takedown. AI is used last and least, the cheap-first expensive-rarely cascade principle applied to domains.
+Rejected and why: Sending the raw page to the model - injection surface and a security risk on a phishing site. Auto-fetching every page - risky and slow; kept optional and off by default.
+Status: active
+
 ---
 
 # Tried and Abandoned
