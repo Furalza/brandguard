@@ -32,6 +32,12 @@ class DomainAgeSignal:
     evidence: str
 
 
+# Certificate authorities. A free CA (Let's Encrypt, ZeroSSL) is the phisher's
+# usual choice; a paid/organization CA is a weak legitimacy hint, never proof,
+# since an attacker can also buy one. Used only to nudge priority, not to decide.
+_FREE_CA_MARKERS = ("let's encrypt", "lets encrypt", "zerossl", "buypass", "google trust")
+
+
 @dataclass(frozen=True)
 class CertSignal:
     """Result of a TLS certificate inspection."""
@@ -40,6 +46,7 @@ class CertSignal:
     issuer: str | None
     age_days: int | None
     suspicious: bool
+    free_ca: bool | None      # True=free CA, False=paid/org CA, None=unknown
     evidence: str
 
 
@@ -112,14 +119,19 @@ def cert_age(domain: str, *, timeout: float = 6.0) -> CertSignal | None:
     issuer = issuer_parts.get("organizationName") or issuer_parts.get("commonName")
     age_days = (datetime.now(tz=UTC) - issued).days
     young = age_days <= _YOUNG_DOMAIN_DAYS
+    free_ca: bool | None = None
+    if issuer:
+        low = issuer.lower()
+        free_ca = any(marker in low for marker in _FREE_CA_MARKERS)
     return CertSignal(
         issued_on=issued,
         issuer=issuer,
         age_days=age_days,
         suspicious=young,
+        free_ca=free_ca,
         evidence=(
             f"TLS certificate issued {age_days} days ago"
             + (f" by {issuer}" if issuer else "")
-            + (" (recent)." if young else ".")
+            + (" (recent, free CA)." if young and free_ca else " (recent)." if young else ".")
         ),
     )

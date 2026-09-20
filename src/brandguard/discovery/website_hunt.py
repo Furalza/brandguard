@@ -227,7 +227,7 @@ def enrich_live_lookalikes(findings: list[DomainFinding]) -> list[EnrichedFindin
     Non-lookalike or non-live findings are passed through at low priority with no
     network cost. This is the domain cascade's second tier.
     """
-    from brandguard.discovery.domain_signals import cert_age, whois_age
+    from brandguard.discovery.domain_signals import _YOUNG_DOMAIN_DAYS, cert_age, whois_age
 
     out: list[EnrichedFinding] = []
     for f in findings:
@@ -238,21 +238,35 @@ def enrich_live_lookalikes(findings: list[DomainFinding]) -> list[EnrichedFindin
         age = whois_age(f.domain)
         cert = cert_age(f.domain)
         evidence = list(f.evidence)
-        young_domain = age is not None and age.suspicious
-        young_cert = cert is not None and cert.suspicious
         if age is not None:
             evidence.append(age.evidence)
         if cert is not None:
             evidence.append(cert.evidence)
 
-        if young_domain:
-            priority = "high"
-        elif young_cert and age is None:
-            priority = "medium"
-        elif age is not None and not young_domain:
-            priority = "low"
+        young_domain = age is not None and age.suspicious
+        old_domain = age is not None and not age.suspicious
+        young_cert = cert is not None and cert.suspicious
+        free_ca = cert is not None and cert.free_ca is True
+        paid_established_cert = (
+            cert is not None and cert.free_ca is False
+            and cert.age_days is not None and cert.age_days > _YOUNG_DOMAIN_DAYS
+        )
+
+        # Priority is a queue order for the analyst, built from the strongest
+        # attacker-independent signal down. Registration age dominates; the
+        # certificate is only a weak nudge (an attacker can buy a paid cert too).
+        if young_domain and (young_cert or free_ca):
+            priority = "high"          # fresh domain + fresh/free cert: classic phishing
+        elif young_domain:
+            priority = "high"          # fresh domain alone is already strong
+        elif old_domain:
+            priority = "low"           # years old: almost certainly a legitimate site
+        elif paid_established_cert:
+            priority = "low"           # age unknown, but an old paid cert leans legitimate
+        elif young_cert or free_ca:
+            priority = "high"          # age unknown but a fresh/free cert is a red flag
         else:
-            priority = "medium"
+            priority = "medium"        # genuinely unknown: needs a look
 
         out.append(EnrichedFinding(
             f,

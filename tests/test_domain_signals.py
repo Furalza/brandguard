@@ -31,3 +31,39 @@ def test_enrichment_preserves_all_findings():
     ]
     out = enrich_live_lookalikes(findings)
     assert len(out) == len(findings)
+
+
+def test_established_paid_cert_lowers_priority_when_age_unknown():
+    # Mirrors the real .az/.de case: WHOIS unavailable, but an old paid-CA
+    # certificate leans legitimate, so priority should be low, not medium.
+    from unittest.mock import patch
+
+    from brandguard.discovery import domain_signals as ds
+
+    def no_whois(domain):
+        return None
+
+    def old_paid_cert(domain, timeout=6.0):
+        return ds.CertSignal(None, "DigiCert Inc", 300, False, False, "old paid cert")
+
+    finding = _f("ziraatbank.de", DomainVerdict.LOOKALIKE, True)
+    with patch.object(ds, "whois_age", no_whois), patch.object(ds, "cert_age", old_paid_cert):
+        out = enrich_live_lookalikes([finding])
+    assert out[0].priority == "low"
+
+
+def test_young_domain_with_free_cert_is_high_priority():
+    from unittest.mock import patch
+
+    from brandguard.discovery import domain_signals as ds
+
+    def young_whois(domain):
+        return ds.DomainAgeSignal(None, 5, True, "5 days old")
+
+    def fresh_free_cert(domain, timeout=6.0):
+        return ds.CertSignal(None, "Let's Encrypt", 3, True, True, "fresh free cert")
+
+    finding = _f("ziraatbank-phish.com", DomainVerdict.LOOKALIKE, True)
+    with patch.object(ds, "whois_age", young_whois), patch.object(ds, "cert_age", fresh_free_cert):
+        out = enrich_live_lookalikes([finding])
+    assert out[0].priority == "high"

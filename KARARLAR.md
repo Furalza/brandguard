@@ -280,6 +280,13 @@ Rationale: This is the domain mirror of app T2 (K-021): ports-and-adapters, dete
 Rejected and why: Sending the raw page to the model - injection surface and a security risk on a phishing site. Auto-fetching every page - risky and slow; kept optional and off by default.
 Status: active
 
+## K-040: Certificate issuer as a weak priority nudge, age still dominates
+Context: On the real Ziraat run, two legitimate subsidiary domains (ziraatbank.az, ziraatbank.de) sat at medium priority because WHOIS was unavailable for those TLDs, even though each had an old certificate from a paid CA (DigiCert). The analyst queue could be sharper.
+Decision: cert_age now records whether the issuer is a free CA (Let's Encrypt/ZeroSSL, the phisher's usual choice) or a paid/organization CA. enrich_live_lookalikes uses this only as a weak nudge: an old paid-CA certificate with unknown domain age lowers priority to low; a young domain or a fresh/free certificate raises it to high. Registration age still dominates when known.
+Rationale: This moved the two legitimate subsidiaries from medium to low (out of the urgent queue) while a simulated fresh-domain, free-cert phishing case correctly rises to high. The certificate is deliberately a weak signal, never a decision: an attacker can buy a paid certificate too, so a young domain still overrides a good certificate. Consistent with the threat model, no attacker-obtainable signal decides alone.
+Rejected and why: Treating a paid CA as proof of legitimacy - an attacker can obtain one; it only nudges when the stronger age signal is missing.
+Status: active
+
 ---
 
 # Tried and Abandoned
