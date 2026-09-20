@@ -1,9 +1,9 @@
 # BrandGuard
 
-Detects apps that impersonate a brand across app marketplaces. Takes a brand
-profile, expands the search space to catch altered names, and triages candidate
-listings through a cost-aware cascade into labelled, evidence-backed verdicts an
-analyst can act on.
+Detects brand impersonation across app marketplaces and, as a second track,
+lookalike websites. Takes a brand profile, expands the search space to catch
+altered names and domains, and triages candidates through a cost-aware cascade
+into labelled, evidence-backed verdicts an analyst can act on.
 
 ## What it does
 
@@ -63,6 +63,26 @@ The six labels are `official`, `impersonation`, `repackaged`,
 `third_party_legitimate`, `unrelated`, `uncertain`. `uncertain` is a real
 answer: the system defers rather than force a costly wrong call.
 
+A parallel track hunts lookalike websites, where phishing more often lives:
+
+```
+Official domain
+    |
+    v
+Domain discovery  generated lookalikes (typosquat, leet, lure-word, alt-TLD)
+                  + Serper (Google search) for the brand off its official domain
+    |
+    v
+Domain cascade
+    D0  string similarity + brand-token check     no network
+    D1  WHOIS age + TLS certificate               only for live lookalikes
+    D2  LLM adjudicator (structured facts only)   only if still ambiguous
+```
+
+Domain verdicts (`lookalike`, `mentions`, `unrelated`) are separate from app
+labels; a generated variant is distinguished from a domain a search actually
+returned, and D1 orders the analyst queue by registration age.
+
 Design rationale for every non-obvious choice is in `KARARLAR.md` (decision
 log). The threat model that justifies each signal weight is in
 `docs/THREAT_MODEL.md`.
@@ -72,7 +92,7 @@ log). The threat model that justifies each signal weight is in
 ```bash
 python -m venv .venv
 source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
-pip install -e ".[dev,icons]"      # add ,llm for the real LLM adjudicator
+pip install -e ".[dev,icons]"      # extras: llm, live (Google Play), serper (search), whois (domain age)
 ```
 
 ## Usage
@@ -86,6 +106,15 @@ python run.py --profile data/profiles/ornek_bank.json \
 
 Options: `--pretty` for a table with evidence, `--only impersonation` to filter,
 `--official-icon path.png` to enable icon comparison.
+
+Other entry points:
+
+```bash
+python scripts/scrape_and_triage.py --brand "..." --sector banking   # live Google Play
+python scripts/serper_hunt.py --profile data/watchlist/<brand>.json    # third-party apps
+python scripts/website_hunt.py --profile data/watchlist/<brand>.json   # lookalike domains
+python scripts/watchlist_scan.py --watchlist data/watchlist            # scan many brands, log results
+```
 
 The LLM tier (T2) is optional. With `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in
 the environment or a `.env` file, it uses the real model; without one it falls
@@ -113,16 +142,18 @@ A locked holdout of unseen records, evaluated once, reproduced these figures
 `unrelated`/`third_party` confusion, which carries no takedown cost. Details and
 known weaknesses are in `KARARLAR.md`. 
 
-The system also runs against live Google Play via an optional source
-(`scripts/scrape_and_triage.py`); testing on real data surfaced and fixed
-issues the mock never showed (schema inconsistency, and a false-positive where a
-real bank's official app was flagged for takedown), recorded as K-029 through
-K-032.
+The system also runs against live sources: Google Play
+(`scripts/scrape_and_triage.py`), third-party APK sites via Serper
+(`scripts/serper_hunt.py`), and lookalike websites (`scripts/website_hunt.py`).
+Testing on real data surfaced and fixed issues the mock never showed (schema
+inconsistency, and false positives where a real bank's official app or an
+official package with no publisher were flagged for takedown), recorded across
+K-029 to K-040.
 
 ## Tests
 
 ```bash
-pytest        # 118 tests
+pytest        # 132 tests
 ruff check .
 ```
 
@@ -131,10 +162,12 @@ ruff check .
 ```
 src/brandguard/
   schema.py            normalized data model shared by every stage
-  discovery/           normalization, name similarity, query expansion, adapters
+  discovery/           normalization, name/domain similarity, query expansion,
+                       adapters, live Google Play, Serper, website + domain cascade
   triage/              signals, veto, fusion, T1 (icon), T2 (adjudicator)
-  eval/                dataset loader, metrics
-scripts/               red-team generator, live runner, evaluation, icon fixtures
+  eval/                dataset loader, metrics, red-team generator
+scripts/               evaluation, live triage, watchlist scan, website hunt,
+                       brand inspector, fixtures
 data/                  brand profiles, labelled test sets, mock marketplaces
 docs/                  threat model, evaluation-set design, plan
 run.py                 end-to-end CLI

@@ -1,9 +1,9 @@
 # BrandGuard: Technical Documentation
 
-Detection of impersonating apps across marketplaces. Given a brand profile, the
-system builds a candidate pool, triages each listing through a cost-aware
-cascade, and returns a label with a calibrated confidence and auditable evidence
-an analyst can act on.
+Detection of brand impersonation across app marketplaces and, as a second track,
+lookalike websites. Given a brand profile, the system builds a candidate pool,
+triages each candidate through a cost-aware cascade, and returns a label with a
+calibrated confidence and auditable evidence an analyst can act on.
 
 ## Problem framing
 
@@ -50,6 +50,12 @@ triage never sees source-specific data, so adding a source is one class. A
 missing field stays `None` and its signal abstains, kept strictly distinct from
 an observed zero.
 
+Three discovery sources sit behind the same adapter interface: mock marketplaces
+(for the evaluation set), live Google Play (optional, via a scraper), and Serper
+(Google search) for third-party APK sites where real impersonations live. Google
+Play is well policed and usually clean; the third-party search is where fake apps
+actually surface.
+
 ### Triage cascade
 
 The cascade spends effort only where it can change an outcome. Most records are
@@ -71,6 +77,39 @@ decided at T0; only conflicting or grey-zone cases reach the expensive tiers.
 - T2 receives a structured, injection-safe summary, never raw attacker text. Its
   opinion re-enters as one dampened signal; the deterministic layer keeps the
   final decision and the false-positive budget.
+
+## Website impersonation (second track)
+
+Phishing more often lives on lookalike domains than on fake apps. A parallel
+domain cascade mirrors the app one:
+
+```
+Official domain
+   |
+   v
+Domain discovery   generate lookalike variants (typosquat, leet, lure-word, alt-TLD)
+                   plus Serper searches for the brand off its official domain
+   |
+   v
+Domain cascade                                     cost per domain
+   D0   string similarity + brand-token check        no network
+   D1   WHOIS age + TLS certificate                  only for live lookalikes
+   D2   LLM adjudicator (structured facts only)       only if still ambiguous
+   |
+   v
+DomainFinding  { verdict, similarity, priority, confirmed_live, evidence[] }
+```
+
+Verdicts are `official`, `lookalike`, `mentions`, `unrelated`, kept separate from
+the app labels because a string-compared domain proves less than an app record.
+`confirmed_live` separates a domain a search actually returned from a generated
+name whose registration is unknown, so the system never claims to have "found" a
+site it only constructed. D1 orders the analyst queue by registration age (a
+fresh lookalike is high priority; a years-old subsidiary is low); the certificate
+issuer is a weak nudge, never a decision, since an attacker can also buy one. On
+a live run for a real bank the system correctly pushed legitimate subsidiaries
+(ziraatbank.de, ziraatkatilim.com.tr) to low priority. Page-content analysis is
+defined as an extension point but not implemented.
 
 ## Evaluation
 
@@ -100,13 +139,13 @@ fixed. This is documented in the decision log (K-029 to K-032).
 ```
 python -m venv .venv
 source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
-pip install -e ".[dev,icons]"      # add ,llm for the real adjudicator; ,live for Google Play
+pip install -e ".[dev,icons]"      # extras: llm, live (Google Play), serper (search), whois (domain age)
 
 python run.py --profile data/profiles/ornek_bank.json \
               --records data/testset/ornek_bank.json --pretty
 
 python scripts/evaluate.py         # metrics
-pytest                             # 118 tests
+pytest                             # 132 tests
 ```
 
 The LLM tier is optional. With an `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (env
@@ -122,18 +161,23 @@ rule adjudicator, so every command works offline.
   strongest attacker-independent signals are absent there and the system is more
   conservative on live data.
 - Real impersonations largely live on third-party stores rather than Google Play,
-  which is well policed; the adapter interface supports adding those sources, but
-  only the Play source is implemented.
+  which is well policed. A Serper (Google search) source covers third-party APK
+  sites; further stores are one adapter each.
+- The website track triages domains by similarity, registration age and
+  certificate; page-content analysis (rendering the page, comparing the login
+  form and logo) is an extension point, not yet implemented.
 
 ## Repository
 
 ```
 src/brandguard/
   schema.py            shared normalised data model
-  discovery/           normalisation, name similarity, query expansion, adapters, live source
+  discovery/           normalisation, name/domain similarity, query expansion,
+                       adapters, live Google Play, Serper, website + domain cascade
   triage/              signals, veto, fusion, T1 (icon), T2 (adjudicator)
   eval/                dataset loader, metrics, red-team generator
-scripts/               evaluation, live triage, brand inspector, fixtures
+scripts/               evaluation, live triage, watchlist scan, website hunt,
+                       brand inspector, fixtures
 data/                  brand profiles, labelled test sets, mock marketplaces
 run.py                 end-to-end CLI
 KARARLAR.md            decision log, abandoned experiments, known weaknesses, next steps
