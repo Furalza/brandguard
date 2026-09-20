@@ -287,6 +287,13 @@ Rationale: This moved the two legitimate subsidiaries from medium to low (out of
 Rejected and why: Treating a paid CA as proof of legitimacy - an attacker can obtain one; it only nudges when the stronger age signal is missing.
 Status: active
 
+## K-041: Certificate Transparency (crt.sh) as the deepest lookalike source
+Context: Play, Serper and generated variants had not surfaced a confirmed real impersonation, because those sources are shallow (a well-policed store, the first page of search). Proof that the system catches a genuine lookalike was missing.
+Decision: Added crtsh_source.py (query crt.sh for the brand's distinctive token, return every domain that ever obtained a certificate containing it) and scripts/crtsh_hunt.py (classify those domains through the existing domain cascade: D0 similarity, then D1 whois/ssl priority). No API key, no cost; fails soft to an empty list on any error. CT-observed domains are marked confirmed_live, since a certificate proves the domain exists.
+Rationale: A phishing domain appears in CT logs the moment it obtains TLS, before it ranks in a search engine or gets reported, so CT is the richest free source of real lookalikes. It plugs into the domain cascade as a discovery source with no change to classification. Payment and crypto brands are the most productive queries, being impersonated most and cleaned up least.
+Rejected and why: Relying on search alone - too shallow, returns the clean first page. Paid threat-intel feeds - unnecessary when CT is free and deeper.
+Status: active
+
 ---
 
 # Tried and Abandoned
