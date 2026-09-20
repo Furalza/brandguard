@@ -21,6 +21,7 @@ from typing import Protocol
 from brandguard.discovery.domain_variants import expand_domain
 from brandguard.discovery.normalize import normalize
 
+
 # A lookalike verdict, separate from the app Label because the signals and the
 # meaning differ. An app can be "impersonation"; a domain we have only compared
 # by string is at most a "lookalike" until richer signals confirm it.

@@ -16,8 +16,8 @@ the missing-vs-zero discipline: an unavailable signal is absent, never guessed.
 
 from __future__ import annotations
 
-import ssl
 import socket
+import ssl
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -101,9 +101,11 @@ def cert_age(domain: str, *, timeout: float = 6.0) -> CertSignal | None:
     """
     context = ssl.create_default_context()
     try:
-        with socket.create_connection((domain, 443), timeout=timeout) as sock:
-            with context.wrap_socket(sock, server_hostname=domain) as ssock:
-                cert = ssock.getpeercert()
+        with (
+            socket.create_connection((domain, 443), timeout=timeout) as sock,
+            context.wrap_socket(sock, server_hostname=domain) as ssock,
+        ):
+            cert = ssock.getpeercert()
     except Exception:  # noqa: BLE001 - a lookalike may have no/broken TLS; unknown
         return None
 
