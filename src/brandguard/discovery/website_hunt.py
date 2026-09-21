@@ -54,8 +54,22 @@ class SerperClient(Protocol):
     def search(self, query: str, num: int) -> list[dict]: ...
 
 
+# Common cosmetic host prefixes that are not part of the registrable name and
+# would otherwise fool "brand at start" checks (www.paypal-login -> the brand is
+# not really behind www).
+_COSMETIC_PREFIXES = ("www.", "m.", "mobile.", "web.")
+
+
 def _label_of(domain: str) -> str:
-    return domain.lower().strip().split("/")[0]
+    host = domain.lower().strip().split("/")[0]
+    changed = True
+    while changed:
+        changed = False
+        for prefix in _COSMETIC_PREFIXES:
+            if host.startswith(prefix):
+                host = host[len(prefix):]
+                changed = True
+    return host
 
 
 def _domain_similarity(candidate: str, official: str) -> float:

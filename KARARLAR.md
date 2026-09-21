@@ -322,6 +322,13 @@ Rationale: This is how real DRP triage separates the class string distance misse
 Rejected and why: A flat lure-word list without the brand-prefix and TLD structure - would flag login-portal.com that has nothing to do with the brand. Pure string similarity - cannot separate paypal-login from paypalobjects.
 Status: active
 
+## K-046: Strip cosmetic host prefixes (www., m.) before structural analysis
+Context: After adding domain anatomy (K-045), a live crt.sh run still left www.paypal--login.info as a low mention instead of a lookalike. crt.sh returns hosts with a leading www. (and sometimes m.), which made the first label "www" rather than the brand, so the brand-at-start check failed and the phishing shape was missed. The unit tests had used bare hosts, so this only showed on real data.
+Decision: _label_of now strips cosmetic prefixes (www., m., mobile., web.) before any classification, so anatomy and similarity see the registrable host. A www test on the real string was added.
+Rationale: These prefixes are not part of the registrable name and must not change the verdict; www.paypal-login.info is the same threat as paypal-login.info. Verified: the real www.paypal--login.info is now a lookalike, the other twelve paypal-* hosts stay mentions, and there is no regression on Ziraat (z1raatbank, www.ziraatbank.com still lookalike; garantibbva unrelated; www.api.paypal.com still official as an own subdomain).
+Rejected and why: Stripping only in one code path - the fix belongs in the single host-normalization point so every downstream check benefits.
+Status: active
+
 ---
 
 # Tried and Abandoned

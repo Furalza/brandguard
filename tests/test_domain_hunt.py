@@ -104,3 +104,11 @@ def test_brand_plus_extra_word_is_not_typosquat():
     from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
     f = classify_domain("paypal-social.com", ["paypal.com"], "PayPal")
     assert f.verdict == DomainVerdict.MENTIONS_BRAND
+
+
+def test_www_prefix_does_not_hide_phishing_shape():
+    # Real crt.sh data returns hosts with www.; the prefix must be stripped so
+    # www.paypal-login.info is still recognized as a brand-prefixed phishing shape.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("www.paypal--login.info", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.LOOKALIKE
