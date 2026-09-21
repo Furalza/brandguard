@@ -83,3 +83,24 @@ def test_real_phishing_shape_is_lookalike():
     from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
     f = classify_domain("paypal-login.info", ["paypal.com"], "PayPal")
     assert f.verdict == DomainVerdict.LOOKALIKE
+
+
+def test_brand_prefixed_lure_word_is_lookalike():
+    # paypal-login.info: brand-prefixed + credential-bait word on a risky TLD.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("paypal-login.info", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.LOOKALIKE
+
+
+def test_brand_prefixed_neutral_word_is_mention():
+    # paypalobjects.com is PayPal's real CDN; brand + neutral word, no lure.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("paypalobjects.com", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.MENTIONS_BRAND
+
+
+def test_brand_plus_extra_word_is_not_typosquat():
+    # paypal-social.com: brand + neutral word is a mention, not a lookalike.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    f = classify_domain("paypal-social.com", ["paypal.com"], "PayPal")
+    assert f.verdict == DomainVerdict.MENTIONS_BRAND

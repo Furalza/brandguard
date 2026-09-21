@@ -315,6 +315,13 @@ Rationale: CT logs are dominated by a brand's own subdomains and occasionally ca
 Rejected and why: Keeping subdomains as mentions - still clutters the review queue with the brand's own hosts. Trusting the crt.sh name field as always a domain - it is not.
 Status: active
 
+## K-045: Structural domain anatomy, so brand+lure domains are caught and brand+neutral are not
+Context: A live crt.sh run for PayPal, after removing the brand's own subdomains, left 13 "paypal-something" domains all classified as low-priority mentions. But paypal-login.info is a classic phishing shape while paypalobjects.com is PayPal's real CDN; pure string similarity cannot tell them apart, and both merely "contain paypal".
+Decision: Added domain_anatomy.py, which reads a domain's structure relative to the brand token: is the brand at the start, is it paired with a credential-bait word (login/secure/verify/wallet/..., plus Turkish equivalents), is the TLD cheap/abuse-prone (.info/.xyz/.top/...). classify_domain now calls a domain a lookalike when it is either a true typosquat (single-word label within 3 chars of an official label, e.g. paypa1, ziraatbank.com) OR a phishing shape (brand-prefixed AND carrying a lure word). A brand plus a neutral word (paypal-social, paypalobjects) stays a mention.
+Rationale: This is how real DRP triage separates the class string distance misses. The lure lexicon is intent-based, so legitimate brand-product and brand-region domains are not promoted, while brand-login style domains are. Verified on the real PayPal set (paypal--login.info to lookalike, paypalobjects.com to mention) with no regression on Ziraat (z1raatbank, ziraatbank.com still lookalike; garantibbva still unrelated). Typosquat length is measured against the official domain label, not the bare token, so the full-name label (ziraatbank) is handled correctly.
+Rejected and why: A flat lure-word list without the brand-prefix and TLD structure - would flag login-portal.com that has nothing to do with the brand. Pure string similarity - cannot separate paypal-login from paypalobjects.
+Status: active
+
 ---
 
 # Tried and Abandoned

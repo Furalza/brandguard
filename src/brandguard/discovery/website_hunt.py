@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Protocol
 
 from brandguard.discovery.domain_variants import expand_domain
+from brandguard.discovery.domain_anatomy import analyze_domain
 from brandguard.discovery.normalize import normalize
 
 # A lookalike verdict, separate from the app Label because the signals and the
@@ -143,21 +144,49 @@ def classify_domain(candidate: str, profile_domains: list[str], brand_name: str)
     label_norm = normalize(cand.replace(".", " "))
     has_brand = bool(brand_token) and _token_in_label(brand_token, label_norm)
 
-    # A lookalike must be both very close in string AND carry the brand token.
-    # Two different banks share "bank" and score high on Jaro-Winkler alone;
-    # requiring the distinctive brand token avoids flagging a rival's domain.
-    if best >= 0.85 and has_brand:
-        return DomainFinding(
-            cand, DomainVerdict.LOOKALIKE, best,
-            [f"Domain closely resembles an official domain (similarity {best}) but is not one."],
-            "", confirmed_live=False,
-        )
+    # Structural read: a brand-prefixed domain paired with a credential-bait word
+    # (paypal-login, paypal-verify) is a phishing shape even when its overall
+    # string distance from the official domain is large. This catches the class
+    # that pure similarity misses.
+    anatomy = analyze_domain(cand, brand_token) if brand_token else None
+    phishing_shape = anatomy is not None and anatomy.phishing_shape
+
+    # A typosquat is a close string match with NO extra words in the label:
+    # paypa1, paypall, paypal (alt TLD). A brand followed by extra words
+    # (paypal-objects, paypal-social) is not a typosquat, however high its
+    # prefix similarity; it is a mention unless it carries a lure word.
+    # A typosquat is a single-word label whose length is close to an OFFICIAL
+    # domain's label (ziraatbank.com.tr -> ziraatbank.com, z1raatbank): a small
+    # edit of the real label, not the brand plus a whole extra word
+    # (paypalobjects is 7 chars longer than the label "paypal", so not a typo).
+    from brandguard.discovery.domain_anatomy import _split_label_and_tld, _words
+    label_only, _ = _split_label_and_tld(cand)
+    label_words = _words(label_only)
+    single_word_label = len(label_words) == 1
+    official_labels = [_split_label_and_tld(d)[0] for d in profile_domains]
+    close_length = single_word_label and any(
+        abs(len(label_words[0]) - len(ol)) <= 3 for ol in official_labels
+    )
+    typosquat = best >= 0.85 and has_brand and close_length
+
+    # A lookalike is either a typosquat OR a structural phishing shape
+    # (brand-prefixed + lure word).
+    if typosquat or phishing_shape:
+        evidence = []
+        if best >= 0.85 and has_brand:
+            evidence.append(
+                f"Domain closely resembles an official domain (similarity {best}) but is not one."
+            )
+        if anatomy is not None:
+            evidence.extend(anatomy.evidence)
+        return DomainFinding(cand, DomainVerdict.LOOKALIKE, best, evidence, "", confirmed_live=False)
     if has_brand:
-        return DomainFinding(
-            cand, DomainVerdict.MENTIONS_BRAND, best,
-            [f"Domain contains the brand name but is not a close lookalike (similarity {best})."],
-            "", confirmed_live=False,
-        )
+        evidence = [
+            f"Domain contains the brand name but is not a close lookalike (similarity {best})."
+        ]
+        if anatomy is not None:
+            evidence.extend(anatomy.evidence)
+        return DomainFinding(cand, DomainVerdict.MENTIONS_BRAND, best, evidence, "", confirmed_live=False)
     return DomainFinding(cand, DomainVerdict.UNRELATED, best,
                          [f"Domain does not resemble the brand (similarity {best})."], "",
                          confirmed_live=False)
