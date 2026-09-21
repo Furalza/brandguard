@@ -50,6 +50,8 @@ def _show(result) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", type=Path, default=None)
+    parser.add_argument("--watchlist", type=Path, default=None,
+                        help="a directory of profile JSONs; scan every one")
     parser.add_argument("--brand", default=None)
     parser.add_argument("--official-domain", default=None)
     parser.add_argument("--sector", default=None)
@@ -58,18 +60,31 @@ def main() -> None:
     parser.add_argument("--results", type=Path, default=Path("results"))
     args = parser.parse_args()
 
-    profile = _load_profile(args)
     sources = [s.strip() for s in args.source.split(",") if s.strip()]
     for s in sources:
         if s not in SOURCES:
             raise SystemExit(f"unknown source {s!r}, expected one of {', '.join(SOURCES)}")
 
-    for source in sources:
-        print(f"running {source} for {profile.brand_name} ...")
-        result = run_source(profile, source)
-        path = record_run(result, args.results)
-        _show(result)
-        print(f"  saved: {path}")
+    # A watchlist directory scans every profile in it; otherwise a single brand.
+    if args.watchlist:
+        profiles = sorted(args.watchlist.glob("*.json"))
+        if not profiles:
+            raise SystemExit(f"no profiles in {args.watchlist}")
+        brands = [BrandProfile(**json.loads(p.read_text(encoding="utf-8"))) for p in profiles]
+    else:
+        brands = [_load_profile(args)]
+
+    for profile in brands:
+        for source in sources:
+            print(f"running {source} for {profile.brand_name} ...")
+            try:
+                result = run_source(profile, source)
+            except Exception as exc:  # noqa: BLE001 - one source/brand failing must not stop the sweep
+                print(f"  ! {source} for {profile.brand_name} failed ({type(exc).__name__}); skipping")
+                continue
+            path = record_run(result, args.results)
+            _show(result)
+            print(f"  saved: {path}")
 
 
 if __name__ == "__main__":

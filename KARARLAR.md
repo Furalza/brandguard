@@ -329,6 +329,13 @@ Rationale: These prefixes are not part of the registrable name and must not chan
 Rejected and why: Stripping only in one code path - the fix belongs in the single host-normalization point so every downstream check benefits.
 Status: active
 
+## K-047: Watchlist sweep in the unified hunt, with per-run failure isolation
+Context: Recording each run (K-042) worked for one brand and one source at a time. Operating a portfolio means scanning many brands across several sources in one pass, and a single throttled source (crt.sh rate limit) must not abort the whole sweep.
+Decision: hunt.py gained --watchlist DIR, which scans every profile in the directory across every requested source (e.g. --source play,serper,website). Each brand-source run is isolated: if one raises, it is logged as skipped and the sweep continues; successful runs are recorded as usual with their timestamp.
+Rationale: This is the portfolio-scan shape a DRP platform runs on a schedule. Failure isolation is essential because live sources throttle independently, so 23 of 24 runs still complete and get recorded when one is throttled. Verified with a mocked sweep: a failing source is skipped for every brand while the working source is recorded for all.
+Rejected and why: Aborting the sweep on the first failure - one flaky source would waste the whole run. Running sources serially in separate commands - loses the single operational entry point and the uniform record.
+Status: active
+
 ---
 
 # Tried and Abandoned

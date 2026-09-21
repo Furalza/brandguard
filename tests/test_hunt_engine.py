@@ -33,8 +33,40 @@ def test_two_runs_are_separate_comparable_files():
 
 
 def test_unknown_source_rejected():
-    import pytest
-
     from brandguard.schema import BrandProfile
+    import pytest
     with pytest.raises(ValueError):
         run_source(BrandProfile(brand_name="X"), "no_such_source")
+
+
+def test_watchlist_sweep_isolates_failures(tmp_path, monkeypatch):
+    # A watchlist sweep must record successful runs and skip a failing source
+    # without aborting the whole sweep.
+    import json as _json
+
+    import brandguard.hunt as hunt
+    from brandguard.hunt_engine import RunResult
+
+    wl = tmp_path / "wl"
+    wl.mkdir()
+    for name in ("a", "b"):
+        (wl / f"{name}.json").write_text(_json.dumps({
+            "brand_name": name, "official_domains": [f"{name}.com"],
+            "official_publishers": [], "known_official_apps": [], "sector": "x",
+        }), encoding="utf-8")
+
+    def fake_run(profile, source, **kw):
+        if source == "website":
+            raise RuntimeError("throttle")
+        return RunResult(profile.brand_name, source, "2026-01-01T00-00-00+00-00", 1, 0, [])
+
+    monkeypatch.setattr(hunt, "run_source", fake_run)
+    results = tmp_path / "results"
+    monkeypatch.setattr("sys.argv",
+        ["hunt", "--watchlist", str(wl), "--source", "play,website", "--results", str(results)])
+    hunt.main()
+
+    log = (results / "run_log.csv").read_text(encoding="utf-8-sig")
+    # both brands recorded for play, neither for the failing website source
+    assert log.count(",play,") == 2
+    assert ",website," not in log
