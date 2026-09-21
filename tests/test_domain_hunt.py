@@ -112,3 +112,20 @@ def test_www_prefix_does_not_hide_phishing_shape():
     from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
     f = classify_domain("www.paypal--login.info", ["paypal.com"], "PayPal")
     assert f.verdict == DomainVerdict.LOOKALIKE
+
+
+def test_known_affiliate_is_allowlisted_not_lookalike():
+    # An analyst-vetted affiliate (ziraatbank.de) must be official, not a
+    # lookalike, so it drops out of the detected queue.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    affiliates = ["ziraatbank.de", "ziraatkatilim.com.tr"]
+    f = classify_domain("ziraatbank.de", ["ziraatbank.com.tr"], "Ziraat Bankası", affiliates)
+    assert f.verdict == DomainVerdict.OFFICIAL
+
+
+def test_allowlist_does_not_shield_real_phishing():
+    # A real phishing shape is still a lookalike even with an allowlist present.
+    from brandguard.discovery.website_hunt import DomainVerdict, classify_domain
+    affiliates = ["ziraatbank.de"]
+    f = classify_domain("ziraatbank-giris.com", ["ziraatbank.com.tr"], "Ziraat Bankası", affiliates)
+    assert f.verdict == DomainVerdict.LOOKALIKE

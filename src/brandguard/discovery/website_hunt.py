@@ -122,7 +122,12 @@ def _is_subdomain_of(host: str, official: str) -> bool:
     return host == official or host.endswith("." + official)
 
 
-def classify_domain(candidate: str, profile_domains: list[str], brand_name: str) -> DomainFinding:
+def classify_domain(
+    candidate: str,
+    profile_domains: list[str],
+    brand_name: str,
+    known_affiliates: list[str] | None = None,
+) -> DomainFinding:
     """Classify one candidate domain against the official domains and brand.
 
     Uses only domain similarity and brand-token presence. A candidate equal to
@@ -148,6 +153,16 @@ def classify_domain(candidate: str, profile_domains: list[str], brand_name: str)
     if any(_is_subdomain_of(cand, d) for d in profile_domains):
         return DomainFinding(cand, DomainVerdict.OFFICIAL, 1.0,
                              ["Subdomain of an official domain (brand's own infrastructure)."],
+                             "", confirmed_live=False)
+
+    # A known affiliate the analyst has already vetted (ziraatbank.de,
+    # ziraatkatilim.com.tr) is legitimate, not an impersonation. It is matched
+    # exactly or as a subdomain, so it never re-enters the detected queue. This
+    # is the allowlist a real DRP tool builds up as analysts clear findings.
+    affiliates = [a.lower() for a in (known_affiliates or [])]
+    if cand in affiliates or any(_is_subdomain_of(cand, a) for a in affiliates):
+        return DomainFinding(cand, DomainVerdict.OFFICIAL, 1.0,
+                             ["Known legitimate affiliate (allowlisted), not an impersonation."],
                              "", confirmed_live=False)
 
     best = max((_domain_similarity(cand, d) for d in profile_domains), default=0.0)
@@ -237,6 +252,7 @@ def hunt_websites(
     num: int = 10,
     max_queries: int = 4,
     include_generated_variants: bool = True,
+    known_affiliates: list[str] | None = None,
 ) -> list[DomainFinding]:
     """Discover and classify impersonating-website candidates for a brand.
 
@@ -253,7 +269,7 @@ def hunt_websites(
         for official in official_domains:
             for variant in expand_domain(official):
                 if variant.domain not in findings:
-                    base = classify_domain(variant.domain, official_domains, brand_name)
+                    base = classify_domain(variant.domain, official_domains, brand_name, known_affiliates)
                     findings[variant.domain] = DomainFinding(
                         base.domain, base.verdict, base.similarity,
                         [*base.evidence, f"Generated {variant.strategy} variant (registration unknown)."],
@@ -273,7 +289,7 @@ def hunt_websites(
                 continue
             host = urlparse(link).netloc.lower().removeprefix("www.")
             if host and host not in findings:
-                finding = classify_domain(host, official_domains, brand_name)
+                finding = classify_domain(host, official_domains, brand_name, known_affiliates)
                 findings[host] = DomainFinding(
                     finding.domain, finding.verdict, finding.similarity,
                     [*finding.evidence, "Returned by a live web search."],

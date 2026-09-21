@@ -142,7 +142,8 @@ def _run_website(profile: BrandProfile, *, num: int, max_queries: int) -> tuple[
 
     client = get_serper_client()
     findings = hunt_websites(profile.brand_name, profile.official_domains,
-                             client=client, num=num, max_queries=max_queries)
+                             client=client, num=num, max_queries=max_queries,
+                             known_affiliates=getattr(profile, 'known_affiliates', None))
     return _domain_rows(enrich_live_lookalikes(findings))
 
 
@@ -159,7 +160,8 @@ def _run_crtsh(profile: BrandProfile, *, cap: int) -> tuple[list[dict], int]:
     ct = search_crtsh(token)
     findings = []
     for c in ct[:cap]:
-        f = classify_domain(c.domain, profile.official_domains, profile.brand_name)
+        f = classify_domain(c.domain, profile.official_domains, profile.brand_name,
+                             getattr(profile, 'known_affiliates', None))
         findings.append(DomainFinding(
             f.domain, f.verdict, f.similarity,
             [*f.evidence, f"Seen in CT logs, first cert {c.first_seen or 'unknown'}."],

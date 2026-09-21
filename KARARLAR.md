@@ -336,6 +336,20 @@ Rationale: This is the portfolio-scan shape a DRP platform runs on a schedule. F
 Rejected and why: Aborting the sweep on the first failure - one flaky source would waste the whole run. Running sources serially in separate commands - loses the single operational entry point and the uniform record.
 Status: active
 
+## K-048: Separate detected threats from generated watch-list names
+Context: The website/crt.sh sources report lookalikes, but many are generated variants (akbbank, aakbank) we produced, not domains a source actually found. Counting these as "flagged" inflated the number and blurred "we found this threat" with "an attacker could register this name". A sweep showing "47 flagged" for a brand was misleading.
+Decision: Split the flagged count into detected (lookalikes a source actually returned, confirmed_live: real threats an analyst should action) and watch (generated lookalike names, not yet confirmed to exist: an early-warning monitor list). RunResult carries both; the run log has detected and watch columns; the CLI prints "N detected, M to watch". App sources report detected only (no generated notion).
+Rationale: Generated variants are valuable as proactive monitoring, a name registered tomorrow is already on the list, but they are not detections and must not be reported as threats. Confirmed-live lookalikes are the real signal. Keeping them in separate columns is honest and matches how an analyst triages: action the detected, monitor the watch. Verified: a live lookalike counts as detected, a generated one as watch, a mention as neither.
+Rejected and why: Dropping generated variants entirely - loses early warning before a domain is indexed or certificated. Counting both as one "flagged" number - overstates detections and is the thing that looked inflated in the sweep.
+Status: active
+
+## K-049: Known-affiliate allowlist so vetted brand entities leave the detected queue
+Context: A live website sweep for Ziraat surfaced ziraatbank.de and ziraatkatilim.com.tr as detected lookalikes. They resemble the official domain and are not on the official-domains list, so the system flagged them, but they are the brand's own legitimate subsidiaries, not impersonations. Reporting them as detections every run is noise an analyst would clear once and never want to see again.
+Decision: BrandProfile gained known_affiliates (a list of vetted legitimate domains). classify_domain, after the official and own-subdomain checks, treats a candidate that matches or is a subdomain of a known affiliate as official with the evidence "Known legitimate affiliate (allowlisted)". The parameter is optional and threaded through hunt_websites and the engine, so existing calls are unchanged.
+Rationale: This is the allowlist a real DRP tool builds as analysts clear findings: a vetted entity should not re-enter the detected queue. Crucially the allowlist only shields exact affiliates and their subdomains; a real phishing shape (ziraatbank-giris.com) is still a lookalike, and a rival (garantibbva) is still unrelated. Verified both ways. The honest consequence is that bank "detected" counts drop toward zero once affiliates are listed, which is correct: those were never impersonations.
+Rejected and why: Hard-coding affiliate patterns in code - every brand differs; it belongs in the profile. Widening the official-domains list to include affiliates - conflates "our domain" with "a related but separate legal entity", which matters for veto semantics elsewhere.
+Status: active
+
 ---
 
 # Tried and Abandoned

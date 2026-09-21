@@ -28,7 +28,8 @@ class BrandProfile(BaseModel):
     """Input describing the brand to protect.
 
     The first five fields mirror the brief. The optional fields improve
-    repackaging and permission-drift detection when the customer can supply them.
+    repackaging and permission-drift detection, and let the customer allowlist
+    known affiliates, when they can supply them.
     """
 
     brand_name: str
@@ -38,6 +39,10 @@ class BrandProfile(BaseModel):
     sector: str
     official_package_ids: list[str] = Field(default_factory=list)
     official_permissions: list[str] | None = None
+    # Vetted legitimate domains (subsidiaries, regional entities) an analyst has
+    # cleared: treated as official, not impersonations, so they leave the
+    # detected queue. Optional; a profile without it behaves as before.
+    known_affiliates: list[str] = Field(default_factory=list)
 
 
 class Publisher(BaseModel):

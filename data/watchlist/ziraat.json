@@ -1,9 +1,28 @@
 {
   "brand_name": "Ziraat Bankası",
-  "official_domains": ["ziraatbank.com.tr"],
-  "official_publishers": ["T.C. Ziraat Bankası A.Ş."],
-  "known_official_apps": ["Ziraat Mobil", "Ziraat Bankası OPİ", "Ziraat Çiftçi Platformu"],
+  "official_domains": [
+    "ziraatbank.com.tr"
+  ],
+  "official_publishers": [
+    "T.C. Ziraat Bankası A.Ş."
+  ],
+  "known_official_apps": [
+    "Ziraat Mobil",
+    "Ziraat Bankası OPİ",
+    "Ziraat Çiftçi Platformu"
+  ],
   "sector": "banking",
-  "official_package_ids": ["com.bankkart.mobil", "com.ziraat.opi", "com.ziraat.basakdijital"],
-  "official_permissions": null
+  "official_package_ids": [
+    "com.bankkart.mobil",
+    "com.ziraat.opi",
+    "com.ziraat.basakdijital"
+  ],
+  "official_permissions": null,
+  "known_affiliates": [
+    "ziraatbank.de",
+    "ziraatbank.az",
+    "ziraatkatilim.com.tr",
+    "ziraatbank-kktc.com",
+    "ziraatbank-sa.com"
+  ]
 }

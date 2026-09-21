@@ -1,0 +1,78 @@
+scanned_at,brand,platform,candidates,takedown_candidates,adjudicator,result_file
+2026-09-07T21:15:15.921351+00:00,Akbank,google_play,9,0,OpenAIAdjudicator,2026-09-07T21-15-15.921351Z__akbank__google_play.json
+2026-09-07T21:15:25.808458+00:00,Garanti BBVA,google_play,10,0,OpenAIAdjudicator,2026-09-07T21-15-25.808458Z__garanti_bbva__google_play.json
+2026-09-07T21:15:46.099063+00:00,Halkbank,google_play,7,0,OpenAIAdjudicator,2026-09-07T21-15-46.099063Z__halkbank__google_play.json
+2026-09-07T21:15:55.685688+00:00,Türkiye İş Bankası,google_play,10,0,OpenAIAdjudicator,2026-09-07T21-15-55.685688Z__türkiye_i_ş_bankası__google_play.json
+2026-09-07T21:16:11.242135+00:00,QNB,google_play,10,0,OpenAIAdjudicator,2026-09-07T21-16-11.242135Z__qnb__google_play.json
+2026-09-07T21:16:26.534505+00:00,VakıfBank,google_play,6,0,OpenAIAdjudicator,2026-09-07T21-16-26.534505Z__vakıfbank__google_play.json
+2026-09-07T21:16:38.398166+00:00,Yapı Kredi,google_play,9,0,OpenAIAdjudicator,2026-09-07T21-16-38.398166Z__yapı_kredi__google_play.json
+2026-09-07T21:16:53.635647+00:00,Ziraat Bankası,google_play,5,0,OpenAIAdjudicator,2026-09-07T21-16-53.635647Z__ziraat_bankası__google_play.json
+2026-09-20T20:29:38.626549+00:00,Binance,crtsh,0,0,2026-09-20T20-29-38.626549Z__binance__crtsh.json
+2026-09-20T20:31:08.540489+00:00,PayPal,crtsh,0,0,2026-09-20T20-31-08.540489Z__paypal__crtsh.json
+2026-09-20T20:47:50.301805+00:00,PayPal,crtsh,194,1,2026-09-20T20-47-50.301805Z__paypal__crtsh.json
+2026-09-20T20:48:24.005119+00:00,Binance,crtsh,50,20,2026-09-20T20-48-24.005119Z__binance__crtsh.json
+2026-09-20T20:49:33.775041+00:00,Netflix,crtsh,0,0,2026-09-20T20-49-33.775041Z__netflix__crtsh.json
+2026-09-20T20:51:10.527052+00:00,PayPal,crtsh,13,0,2026-09-20T20-51-10.527052Z__paypal__crtsh.json
+2026-09-21T09:49:40.003878+00:00,PayPal,crtsh,13,0,2026-09-21T09-49-40.003878Z__paypal__crtsh.json
+2026-09-21T09:52:56.571900+00:00,PayPal,crtsh,0,0,2026-09-21T09-52-56.571900Z__paypal__crtsh.json
+2026-09-21T09:53:59.954676+00:00,Netflix,crtsh,0,0,2026-09-21T09-53-59.954676Z__netflix__crtsh.json
+2026-09-21T10:00:07.885909+00:00,Akbank,play,4,0,2026-09-21T10-00-07.885909Z__akbank__play.json
+2026-09-21T10:00:27.553572+00:00,Akbank,serper,40,0,2026-09-21T10-00-27.553572Z__akbank__serper.json
+2026-09-21T10:00:53.352711+00:00,Akbank,website,55,30,2026-09-21T10-00-53.352711Z__akbank__website.json
+2026-09-21T10:00:57.327674+00:00,Garanti BBVA,play,9,0,2026-09-21T10-00-57.327674Z__garanti_bbva__play.json
+2026-09-21T10:01:17.856312+00:00,Garanti BBVA,serper,37,0,2026-09-21T10-01-17.856312Z__garanti_bbva__serper.json
+2026-09-21T10:01:48.286786+00:00,Garanti BBVA,website,72,46,2026-09-21T10-01-48.286786Z__garanti_bbva__website.json
+2026-09-21T10:01:52.843680+00:00,Halkbank,play,8,0,2026-09-21T10-01-52.843680Z__halkbank__play.json
+2026-09-21T10:02:02.007645+00:00,Halkbank,serper,31,0,2026-09-21T10-02-02.007645Z__halkbank__serper.json
+2026-09-21T10:02:22.203943+00:00,Halkbank,website,63,40,2026-09-21T10-02-22.203943Z__halkbank__website.json
+2026-09-21T10:02:38.468804+00:00,Türkiye İş Bankası,play,10,0,2026-09-21T10-02-38.468804Z__türkiye_i_ş_bankası__play.json
+2026-09-21T10:02:52.802001+00:00,Türkiye İş Bankası,serper,38,0,2026-09-21T10-02-52.802001Z__türkiye_i_ş_bankası__serper.json
+2026-09-21T10:03:02.248189+00:00,Türkiye İş Bankası,website,60,0,2026-09-21T10-03-02.248189Z__türkiye_i_ş_bankası__website.json
+2026-09-21T10:03:06.301185+00:00,QNB,play,11,0,2026-09-21T10-03-06.301185Z__qnb__play.json
+2026-09-21T10:03:22.393003+00:00,QNB,serper,36,0,2026-09-21T10-03-22.393003Z__qnb__serper.json
+2026-09-21T10:03:54.539272+00:00,QNB,website,48,10,2026-09-21T10-03-54.539272Z__qnb__website.json
+2026-09-21T10:03:58.104034+00:00,VakıfBank,play,5,0,2026-09-21T10-03-58.104034Z__vakıfbank__play.json
+2026-09-21T10:04:07.748128+00:00,VakıfBank,serper,42,0,2026-09-21T10-04-07.748128Z__vakıfbank__serper.json
+2026-09-21T10:04:26.467299+00:00,VakıfBank,website,65,44,2026-09-21T10-04-26.467299Z__vakıfbank__website.json
+2026-09-21T10:04:34.621392+00:00,Yapı Kredi,play,9,0,2026-09-21T10-04-34.621392Z__yapı_kredi__play.json
+2026-09-21T10:04:55.413216+00:00,Yapı Kredi,serper,33,0,2026-09-21T10-04-55.413216Z__yapı_kredi__serper.json
+2026-09-21T10:05:16.289422+00:00,Yapı Kredi,website,66,42,2026-09-21T10-05-16.289422Z__yapı_kredi__website.json
+2026-09-21T10:05:20.138170+00:00,Ziraat Bankası,play,4,0,2026-09-21T10-05-20.138170Z__ziraat_bankası__play.json
+2026-09-21T10:05:31.176029+00:00,Ziraat Bankası,serper,35,0,2026-09-21T10-05-31.176029Z__ziraat_bankası__serper.json
+2026-09-21T10:05:47.594305+00:00,Ziraat Bankası,website,66,44,2026-09-21T10-05-47.594305Z__ziraat_bankası__website.json
+2026-09-21T10:09:59.102377+00:00,Trendyol,website,70,40,2026-09-21T10-09-59.102377Z__trendyol__website.json
+2026-09-21T10:10:04.729352+00:00,Trendyol,serper,50,0,2026-09-21T10-10-04.729352Z__trendyol__serper.json
+2026-09-21T10:10:47.673479+00:00,Netflix,website,64,37,2026-09-21T10-10-47.673479Z__netflix__website.json
+2026-09-21T10:10:51.002709+00:00,Netflix,serper,39,0,2026-09-21T10-10-51.002709Z__netflix__serper.json
+2026-09-21T10:11:22.571506+00:00,Hepsiburada,website,76,47,2026-09-21T10-11-22.571506Z__hepsiburada__website.json
+2026-09-21T10:11:26.873889+00:00,Hepsiburada,serper,35,0,2026-09-21T10-11-26.873889Z__hepsiburada__serper.json
+2026-09-21T10:11:56.600269+00:00,Getir,website,59,32,2026-09-21T10-11-56.600269Z__getir__website.json
+2026-09-21T10:12:14.190005+00:00,Getir,serper,52,0,2026-09-21T10-12-14.190005Z__getir__serper.json
+2026-09-21T10:39:56.286114+00:00,Akbank,play,4,0,0,2026-09-21T10-39-56.286114Z__akbank__play.json
+2026-09-21T10:40:08.759266+00:00,Akbank,serper,40,0,0,2026-09-21T10-40-08.759266Z__akbank__serper.json
+2026-09-21T10:40:31.094599+00:00,Akbank,website,54,0,30,2026-09-21T10-40-31.094599Z__akbank__website.json
+2026-09-21T10:40:34.929904+00:00,Garanti BBVA,play,9,0,0,2026-09-21T10-40-34.929904Z__garanti_bbva__play.json
+2026-09-21T10:40:57.686597+00:00,Garanti BBVA,serper,37,0,0,2026-09-21T10-40-57.686597Z__garanti_bbva__serper.json
+2026-09-21T10:41:24.079083+00:00,Garanti BBVA,website,71,1,45,2026-09-21T10-41-24.079083Z__garanti_bbva__website.json
+2026-09-21T10:41:29.397145+00:00,Halkbank,play,8,0,0,2026-09-21T10-41-29.397145Z__halkbank__play.json
+2026-09-21T10:41:39.861477+00:00,Halkbank,serper,31,0,0,2026-09-21T10-41-39.861477Z__halkbank__serper.json
+2026-09-21T10:41:58.155348+00:00,Halkbank,website,61,1,38,2026-09-21T10-41-58.155348Z__halkbank__website.json
+2026-09-21T10:42:03.718237+00:00,Türkiye İş Bankası,play,10,0,0,2026-09-21T10-42-03.718237Z__türkiye_i_ş_bankası__play.json
+2026-09-21T10:42:17.560820+00:00,Türkiye İş Bankası,serper,38,0,0,2026-09-21T10-42-17.560820Z__türkiye_i_ş_bankası__serper.json
+2026-09-21T10:42:26.049995+00:00,Türkiye İş Bankası,website,60,0,0,2026-09-21T10-42-26.049995Z__türkiye_i_ş_bankası__website.json
+2026-09-21T10:42:29.309410+00:00,QNB,play,11,0,0,2026-09-21T10-42-29.309410Z__qnb__play.json
+2026-09-21T10:42:48.194334+00:00,QNB,serper,36,0,0,2026-09-21T10-42-48.194334Z__qnb__serper.json
+2026-09-21T10:43:20.183527+00:00,QNB,website,49,0,10,2026-09-21T10-43-20.183527Z__qnb__website.json
+2026-09-21T10:43:23.153462+00:00,VakıfBank,play,5,0,0,2026-09-21T10-43-23.153462Z__vakıfbank__play.json
+2026-09-21T10:43:36.204531+00:00,VakıfBank,serper,43,0,0,2026-09-21T10-43-36.204531Z__vakıfbank__serper.json
+2026-09-21T10:43:56.302089+00:00,VakıfBank,website,65,1,42,2026-09-21T10-43-56.302089Z__vakıfbank__website.json
+2026-09-21T10:44:01.781184+00:00,Yapı Kredi,play,9,0,0,2026-09-21T10-44-01.781184Z__yapı_kredi__play.json
+2026-09-21T10:44:15.413946+00:00,Yapı Kredi,serper,31,0,0,2026-09-21T10-44-15.413946Z__yapı_kredi__serper.json
+2026-09-21T10:44:40.048847+00:00,Yapı Kredi,website,66,1,42,2026-09-21T10-44-40.048847Z__yapı_kredi__website.json
+2026-09-21T10:44:43.785783+00:00,Ziraat Bankası,play,4,0,0,2026-09-21T10-44-43.785783Z__ziraat_bankası__play.json
+2026-09-21T10:44:50.700583+00:00,Ziraat Bankası,serper,35,0,0,2026-09-21T10-44-50.700583Z__ziraat_bankası__serper.json
+2026-09-21T10:45:06.907138+00:00,Ziraat Bankası,website,66,2,42,2026-09-21T10-45-06.907138Z__ziraat_bankası__website.json
+2026-09-21T10:45:12.374425+00:00,Trendyol,website,66,1,39,2026-09-21T10-45-12.374425Z__trendyol__website.json
+2026-09-21T10:45:19.528330+00:00,Trendyol,serper,50,0,0,2026-09-21T10-45-19.528330Z__trendyol__serper.json
+2026-09-21T10:46:03.283257+00:00,Netflix,website,65,0,37,2026-09-21T10-46-03.283257Z__netflix__website.json
+2026-09-21T10:46:06.489567+00:00,Netflix,serper,39,0,0,2026-09-21T10-46-06.489567Z__netflix__serper.json
