@@ -81,7 +81,14 @@ Domain cascade
 
 Domain verdicts (`lookalike`, `mentions`, `unrelated`) are separate from app
 labels; a generated variant is distinguished from a domain a search actually
-returned, and D1 orders the analyst queue by registration age.
+returned (`confirmed_live`), and D1 orders the analyst queue by registration age.
+
+Findings split into **detected** (lookalikes a source actually found: real
+threats to action) and **watch** (generated lookalike names to monitor, not yet
+confirmed to exist), so a run reports "1 detected, 45 to watch" rather than an
+inflated single count. A profile's `known_affiliates` allowlists vetted
+legitimate entities (a brand's own subsidiaries such as `ziraatbank.de`) so they
+leave the detected queue; the allowlist never shields a real phishing shape.
 
 Design rationale for every non-obvious choice is in `KARARLAR.md` (decision
 log). The threat model that justifies each signal weight is in
@@ -107,14 +114,23 @@ python run.py --profile data/profiles/ornek_bank.json \
 Options: `--pretty` for a table with evidence, `--only impersonation` to filter,
 `--official-icon path.png` to enable icon comparison.
 
-Other entry points:
+### Live hunting
+
+A single command runs every discovery source and records each run:
 
 ```bash
-python scripts/scrape_and_triage.py --brand "..." --sector banking   # live Google Play
-python scripts/serper_hunt.py --profile data/watchlist/<brand>.json    # third-party apps
-python scripts/website_hunt.py --profile data/watchlist/<brand>.json   # lookalike domains
-python scripts/watchlist_scan.py --watchlist data/watchlist            # scan many brands, log results
+python -m brandguard.hunt --profile data/watchlist/ziraat.json --source crtsh
+python -m brandguard.hunt --brand "Binance" --official-domain binance.com --source crtsh,website
+python -m brandguard.hunt --watchlist data/watchlist --source play,serper,website
 ```
+
+Sources: `play` (live Google Play), `serper` (third-party APK sites via Google
+search), `website` (lookalike domains), `crtsh` (Certificate Transparency logs,
+the deepest source: a phishing domain appears there the moment it gets a
+certificate). Every run is saved to `results/<UTC>__<brand>__<source>.json` and
+appended to `results/run_log.csv`, so runs are comparable over time; compare two
+with `scripts/watchlist_diff.py`. A throttled source for one brand is skipped and
+the sweep continues.
 
 The LLM tier (T2) is optional. With `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in
 the environment or a `.env` file, it uses the real model; without one it falls
@@ -142,18 +158,22 @@ A locked holdout of unseen records, evaluated once, reproduced these figures
 `unrelated`/`third_party` confusion, which carries no takedown cost. Details and
 known weaknesses are in `KARARLAR.md`. 
 
-The system also runs against live sources: Google Play
-(`scripts/scrape_and_triage.py`), third-party APK sites via Serper
-(`scripts/serper_hunt.py`), and lookalike websites (`scripts/website_hunt.py`).
-Testing on real data surfaced and fixed issues the mock never showed (schema
-inconsistency, and false positives where a real bank's official app or an
-official package with no publisher were flagged for takedown), recorded across
-K-029 to K-040.
+The system also runs against live sources through the unified hunt command:
+Google Play, third-party APK sites (Serper), lookalike websites, and Certificate
+Transparency logs (crt.sh). Testing on real data surfaced and fixed issues the
+mock never showed (schema inconsistency; false positives where a real bank's
+official app, an official package with no publisher, or the brand's own
+subdomains were flagged), recorded across K-029 to K-049. On real Turkish banks
+the system is correctly quiet (their active impersonations are rare and quickly
+removed); on heavily targeted global brands the crt.sh source surfaces genuine
+lookalikes (e.g. dozens for Binance). The system is brand-agnostic: banks were
+only the test data, and non-bank brands (Trendyol, Netflix, Getir) run through
+the same pipeline.
 
 ## Tests
 
 ```bash
-pytest        # 132 tests
+pytest        # 158 tests
 ruff check .
 ```
 
@@ -163,10 +183,13 @@ ruff check .
 src/brandguard/
   schema.py            normalized data model shared by every stage
   discovery/           normalization, name/domain similarity, query expansion,
-                       adapters, live Google Play, Serper, website + domain cascade
+                       adapters, live Google Play, Serper, crt.sh,
+                       website + domain cascade (anatomy, WHOIS/SSL signals)
   triage/              signals, veto, fusion, T1 (icon), T2 (adjudicator)
   eval/                dataset loader, metrics, red-team generator
-scripts/               evaluation, live triage, watchlist scan, website hunt,
+  hunt_engine.py       unified engine over all sources, timestamped recording
+  hunt.py              unified CLI (python -m brandguard.hunt)
+scripts/               evaluation, per-source runners, watchlist scan/diff,
                        brand inspector, fixtures
 data/                  brand profiles, labelled test sets, mock marketplaces
 docs/                  threat model, evaluation-set design, plan

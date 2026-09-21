@@ -50,11 +50,12 @@ triage never sees source-specific data, so adding a source is one class. A
 missing field stays `None` and its signal abstains, kept strictly distinct from
 an observed zero.
 
-Three discovery sources sit behind the same adapter interface: mock marketplaces
-(for the evaluation set), live Google Play (optional, via a scraper), and Serper
-(Google search) for third-party APK sites where real impersonations live. Google
-Play is well policed and usually clean; the third-party search is where fake apps
-actually surface.
+Four discovery sources sit behind the same adapter interface: mock marketplaces
+(for the evaluation set), live Google Play (a scraper), Serper (Google search)
+for third-party APK sites, and Certificate Transparency logs (crt.sh) for the
+domain track. Google Play is well policed and usually clean; the deeper sources
+are where real impersonations surface, and crt.sh shows a phishing domain the
+moment it obtains a certificate, before it is indexed or reported.
 
 ### Triage cascade
 
@@ -102,14 +103,33 @@ DomainFinding  { verdict, similarity, priority, confirmed_live, evidence[] }
 
 Verdicts are `official`, `lookalike`, `mentions`, `unrelated`, kept separate from
 the app labels because a string-compared domain proves less than an app record.
-`confirmed_live` separates a domain a search actually returned from a generated
-name whose registration is unknown, so the system never claims to have "found" a
-site it only constructed. D1 orders the analyst queue by registration age (a
-fresh lookalike is high priority; a years-old subsidiary is low); the certificate
-issuer is a weak nudge, never a decision, since an attacker can also buy one. On
-a live run for a real bank the system correctly pushed legitimate subsidiaries
-(ziraatbank.de, ziraatkatilim.com.tr) to low priority. Page-content analysis is
-defined as an extension point but not implemented.
+D0 also reads a domain structurally (via `domain_anatomy`): a brand-prefixed name
+paired with a credential-bait word (`paypal-login`) is a lookalike even when its
+string distance is large, while a brand plus a neutral word (`paypalobjects`) is
+only a mention. D1 orders the analyst queue by registration age (a fresh lookalike
+is high; a years-old subsidiary is low); the certificate issuer is a weak nudge,
+never a decision, since an attacker can also buy one.
+
+Two distinctions keep the output honest. `confirmed_live` separates a domain a
+source actually returned from a generated variant whose registration is unknown,
+so results split into **detected** (real, found threats) and **watch** (generated
+names to monitor). And `known_affiliates` in the profile allowlists a brand's own
+vetted entities (`ziraatbank.de`, `ziraatkatilim.com.tr`) so they are treated as
+official and leave the detected queue; the allowlist never shields a genuine
+phishing shape. Page-content analysis (rendering the page, comparing the login
+form) is defined as an extension point but not implemented.
+
+## Operations
+
+A single command, `python -m brandguard.hunt`, runs any set of sources
+(`play,serper,website,crtsh`) for one brand or a whole watchlist directory. Each
+run is written to `results/` as a timestamped JSON and summarised in a single
+append-only `results/run_log.csv`, so a brand's exposure is comparable across
+runs and sources over time (per-run JSON is the detail; the log is the ledger).
+A source that throttles or fails for one brand is skipped and the sweep
+continues, so a portfolio scan completes even when one live source is rate-
+limited. crt.sh, which throttles often, is fetched with bounded exponential
+backoff so a transient throttle is not mistaken for "no lookalikes".
 
 ## Evaluation
 
@@ -145,7 +165,7 @@ python run.py --profile data/profiles/ornek_bank.json \
               --records data/testset/ornek_bank.json --pretty
 
 python scripts/evaluate.py         # metrics
-pytest                             # 132 tests
+pytest                             # 158 tests
 ```
 
 The LLM tier is optional. With an `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (env
@@ -160,23 +180,28 @@ rule adjudicator, so every command works offline.
 - Live Google Play does not expose publisher account age or verification, so the
   strongest attacker-independent signals are absent there and the system is more
   conservative on live data.
-- Real impersonations largely live on third-party stores rather than Google Play,
-  which is well policed. A Serper (Google search) source covers third-party APK
-  sites; further stores are one adapter each.
-- The website track triages domains by similarity, registration age and
-  certificate; page-content analysis (rendering the page, comparing the login
+- Real impersonations largely live off Google Play, which is well policed. The
+  Serper and crt.sh sources cover third-party apps and certificate logs; further
+  stores are one adapter each.
+- The website track triages domains by similarity, structure, registration age
+  and certificate; page-content analysis (rendering the page, comparing the login
   form and logo) is an extension point, not yet implemented.
+- On well-policed brands the system is correctly quiet; genuine lookalikes show
+  up most on heavily targeted global brands via crt.sh. A generated variant is a
+  watch-list entry, not a detection, until a source confirms it exists.
 
 ## Repository
 
 ```
 src/brandguard/
   schema.py            shared normalised data model
-  discovery/           normalisation, name/domain similarity, query expansion,
-                       adapters, live Google Play, Serper, website + domain cascade
+  discovery/           normalisation, similarity, query expansion, adapters,
+                       live Google Play, Serper, crt.sh, website + domain cascade
   triage/              signals, veto, fusion, T1 (icon), T2 (adjudicator)
   eval/                dataset loader, metrics, red-team generator
-scripts/               evaluation, live triage, watchlist scan, website hunt,
+  hunt_engine.py       unified engine over all sources, timestamped recording
+  hunt.py              unified CLI (python -m brandguard.hunt)
+scripts/               evaluation, per-source runners, watchlist scan/diff,
                        brand inspector, fixtures
 data/                  brand profiles, labelled test sets, mock marketplaces
 run.py                 end-to-end CLI
