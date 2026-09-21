@@ -21,6 +21,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Callable
 
 from brandguard.schema import BrandProfile
 
@@ -39,8 +40,14 @@ class RunResult:
     source: str
     scanned_at: str
     candidates: int
-    flagged: int          # takedown candidates (apps) or lookalikes (domains)
+    detected: int         # confirmed threats: app takedowns, or live (real) lookalikes
+    watch: int            # generated lookalike names to monitor, not yet confirmed
     rows: list[dict]      # analyst-facing records, source-specific but JSON-safe
+
+    @property
+    def flagged(self) -> int:
+        """Back-compat alias: total flagged = detected + watch."""
+        return self.detected + self.watch
 
 
 def _now_iso() -> str:
@@ -75,15 +82,15 @@ def _run_play(profile: BrandProfile, *, max_queries: int, hits: int, adjudicator
                 seen.add(r.app_id)
                 records.append(r)
 
-    rows, flagged = [], 0
+    rows, detected = [], 0
     for r in records:
         d = triage_t0(r, profile)
         if d.escalate or d.verdict.label.value == "uncertain":
             d = triage_t2(r, profile, d, adjudicator)
         rows.append(d.verdict.to_analyst_json())
         if d.verdict.label.value in _TAKEDOWN:
-            flagged += 1
-    return rows, flagged
+            detected += 1
+    return rows, detected, 0
 
 
 def _run_serper(profile: BrandProfile, *, num: int, max_queries: int, adjudicator) -> tuple[list[dict], int]:
@@ -93,19 +100,24 @@ def _run_serper(profile: BrandProfile, *, num: int, max_queries: int, adjudicato
 
     client = get_serper_client()
     records = search_apks(profile.brand_name, client=client, num=num, max_queries=max_queries)
-    rows, flagged = [], 0
+    rows, detected = [], 0
     for r in records:
         d = triage_t0(r, profile)
         if d.escalate or d.verdict.label.value == "uncertain":
             d = triage_t2(r, profile, d, adjudicator)
         rows.append(d.verdict.to_analyst_json())
         if d.verdict.label.value in _TAKEDOWN:
-            flagged += 1
-    return rows, flagged
+            detected += 1
+    return rows, detected, 0
 
 
-def _domain_rows(enriched) -> tuple[list[dict], int]:
-    rows, flagged = [], 0
+def _domain_rows(enriched) -> tuple[list[dict], int, int]:
+    """Return (rows, detected, watch).
+
+    detected = lookalikes a source actually found (confirmed_live): real threats.
+    watch    = generated lookalike names we produced, not yet confirmed to exist.
+    """
+    rows, detected, watch = [], 0, 0
     for e in enriched:
         f = e.finding
         rows.append({
@@ -117,8 +129,11 @@ def _domain_rows(enriched) -> tuple[list[dict], int]:
             "evidence": e.evidence,
         })
         if f.verdict.value in _HIGH_DOMAIN:
-            flagged += 1
-    return rows, flagged
+            if f.confirmed_live:
+                detected += 1
+            else:
+                watch += 1
+    return rows, detected, watch
 
 
 def _run_website(profile: BrandProfile, *, num: int, max_queries: int) -> tuple[list[dict], int]:
@@ -166,22 +181,22 @@ def run_source(profile: BrandProfile, source: str, **kw) -> RunResult:
     started = _now_iso()
     if source == "play":
         from brandguard.triage.adjudicator import get_adjudicator
-        rows, flagged = _run_play(profile, max_queries=kw.get("max_queries", 4),
-                                  hits=kw.get("hits", 5), adjudicator=get_adjudicator())
+        rows, detected, watch = _run_play(profile, max_queries=kw.get("max_queries", 4),
+                                          hits=kw.get("hits", 5), adjudicator=get_adjudicator())
     elif source == "serper":
         from brandguard.triage.adjudicator import get_adjudicator
-        rows, flagged = _run_serper(profile, num=kw.get("num", 10),
-                                    max_queries=kw.get("max_queries", 6),
-                                    adjudicator=get_adjudicator())
+        rows, detected, watch = _run_serper(profile, num=kw.get("num", 10),
+                                            max_queries=kw.get("max_queries", 6),
+                                            adjudicator=get_adjudicator())
     elif source == "website":
-        rows, flagged = _run_website(profile, num=kw.get("num", 10),
-                                     max_queries=kw.get("max_queries", 4))
+        rows, detected, watch = _run_website(profile, num=kw.get("num", 10),
+                                             max_queries=kw.get("max_queries", 4))
     else:  # crtsh
-        rows, flagged = _run_crtsh(profile, cap=kw.get("cap", 200))
+        rows, detected, watch = _run_crtsh(profile, cap=kw.get("cap", 200))
 
     return RunResult(
         brand=profile.brand_name, source=source, scanned_at=started,
-        candidates=len(rows), flagged=flagged, rows=rows,
+        candidates=len(rows), detected=detected, watch=watch, rows=rows,
     )
 
 
@@ -204,7 +219,8 @@ def record_run(result: RunResult, results_dir: Path = Path("results")) -> Path:
     with log.open("a", newline="", encoding="utf-8-sig") as fh:
         w = csv.writer(fh)
         if new:
-            w.writerow(["scanned_at", "brand", "source", "candidates", "flagged", "result_file"])
+            w.writerow(["scanned_at", "brand", "source", "candidates",
+                        "detected", "watch", "result_file"])
         w.writerow([result.scanned_at, result.brand, result.source,
-                    result.candidates, result.flagged, fname])
+                    result.candidates, result.detected, result.watch, fname])
     return out

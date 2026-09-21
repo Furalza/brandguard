@@ -35,7 +35,7 @@ def _load_profile(args) -> BrandProfile:
 
 def _show(result) -> None:
     print(f"\n[{result.source}] {result.brand}  {result.scanned_at}")
-    print(f"  {result.candidates} candidates, {result.flagged} flagged")
+    print(f"  {result.candidates} candidates, {result.detected} detected, {result.watch} to watch")
     for row in result.rows[:25]:
         if "domain" in row:
             tag = "  [REVIEW]" if row["verdict"] == "lookalike" else ""
