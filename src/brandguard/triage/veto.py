@@ -163,8 +163,14 @@ def check_unauthorized_build_veto(record: AppRecord, profile: BrandProfile) -> S
         return None
 
     name_norm = normalize(record.name)
-    pkg_norm = normalize(record.app_id.replace(".", " ").replace("_", " "))
-    markers = _has_build_marker(f"{name_norm} {pkg_norm}")
+    # app_id is a real package id only when it is not a URL. A search hit whose
+    # package could not be extracted carries the raw link as app_id, and a link
+    # path (…/howto/how-to-download-spotify-mod-apk) is an article title, not a
+    # build name; a marker there is not evidence of a modded build. So scan the
+    # package id only when it looks like a dotted package, never a URL.
+    is_url = "://" in record.app_id or "/" in record.app_id
+    pkg_norm = "" if is_url else normalize(record.app_id.replace(".", " ").replace("_", " "))
+    markers = _has_build_marker(f"{name_norm} {pkg_norm}".strip())
     if not markers:
         return None
 

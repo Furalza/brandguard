@@ -56,3 +56,20 @@ def test_veto_chain_returns_repackaged():
     # End to end through check_vetoes.
     v = check_vetoes(_rec("Spotify Cracked", "com.spotify.cracked", "Pirate"), PROFILE)
     assert v is not None and v.forced_label == Label.REPACKAGED
+
+
+def test_marker_in_url_path_does_not_fire():
+    # A search hit whose app_id is a URL (package not extractable): a marker in
+    # the URL path is an article title, not a build name, and must not fire.
+    rec = _rec("How to download Spotify",
+               "https://apkpure.com/howto/how-to-download-spotify-mod-apk", "APKPure")
+    v = check_unauthorized_build_veto(rec, PROFILE)
+    assert v is None
+
+
+def test_clean_name_with_marker_only_in_host_does_not_fire():
+    # Name and package are clean; "mod" only appears in the host (modplays.com).
+    # Site name is not evidence the app itself is modded.
+    rec = _rec("Spotify", "https://modplays.com/apps/spotify", "ModPlays")
+    v = check_unauthorized_build_veto(rec, PROFILE)
+    assert v is None
