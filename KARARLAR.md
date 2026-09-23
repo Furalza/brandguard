@@ -397,6 +397,8 @@ Status: active
 - One logistics impersonation ("Puan Kazan") defers to uncertain instead of impersonation: a 7-month account with no strong attacker-independent signal; correct per K-018, recall cost accepted for precision.
 - T1 (icon) shows zero usage in offline evaluation because test records carry no icon files; validated separately with synthetic icons.
 - Live LLM (OpenAI) agreement 23/28 on the bank set; all disagreements benign-family.
+- Bank affiliates surface as detected until allowlisted. On live website/crt.sh runs, a brand's own foreign subsidiaries and sister entities (garantibbva.ro, garantibank.ro, vakifbank.de, vakifyatirim.com.tr) are close enough to the official domain to be lookalikes but are legitimate. They are cleared per brand via known_affiliates (K-049); the Ziraat profile is done, the other bank profiles still need their affiliate lists filled in. Until then those entries show as detected, not as real phishing. No Turkish bank surfaced a genuine active impersonation on either source; the banks are well policed and quickly clean up, so a clean result there is correct, and the genuine detections are on heavily targeted global brands (Binance 13 lookalikes on crt.sh; GTA/Netflix/Spotify modded builds on Serper).
+- App-side mod/cracked detection keys on the app name and package id, not page content. A search hit that is actually an article or a government download page ("how-to-download-...-mod", a gov.in page) is excluded by a non-app-page URL guard rather than by inspecting the page. Fetching each page to confirm a download button or a login form is the more precise but more expensive and riskier route (connecting to a suspected phishing/mod site), left as an extension point.
 
 ---
 
