@@ -363,6 +363,13 @@ Decision: hunt.py now accepts optional --max-queries, --num and --cap and forwar
 Rationale: Cost control belongs at the operator's fingertips: the broadened website dorks (K-050) make query count matter, so bounding it from the CLI is necessary. Forwarding only provided values keeps existing behaviour unchanged when the flags are absent.
 Status: active
 
+## K-052: Unauthorized-build veto catches modded/cracked apps, spares legit mirrors
+Context: On the app side, Serper surfaces third-party listings like "Spotify Premium Mod" and "cracked" builds, but the system labelled them third_party because the publisher field was empty or a mirror. These are real fake apps: unauthorized, modified redistributions of the official app, i.e. repackaged by definition. The hard part is not catching them but not flagging legitimate mirrors (APKMirror carrying the real "spotify-ab" build).
+Decision: Added check_unauthorized_build_veto in veto.py, following the package-veto pattern. It fires repackaged when the app NAME or PACKAGE id (never the description) carries a strong build marker (mod, cracked, hacked, patched, nulled, ...) or an explicit unlock phrase (premium unlocked, mega mod, ...), AND the publisher is not official. Strong markers match as whole words so "mod" does not fire on "model"; weak product words (premium, pro, plus) never fire alone, only inside an unlock phrase. Added to the veto chain after publisher and package vetoes.
+Rationale: A modded/cracked build is a repackaged app, so the repackaged label is correct. The publisher guard is what keeps legit mirrors safe: an official publisher's build is never flagged however a mirror labels it. Reading markers from name/package only avoids the innocent "no mods needed" description case. Verified: mod/cracked/unlocked builds from non-official publishers become repackaged; official-publisher builds, "premium" alone, and "model" stay untouched.
+Rejected and why: A scored signal in fusion - fusion maps scores to impersonation, not repackaged, so a veto with a forced repackaged label is the right shape, consistent with the existing package veto. Reading the description for markers - "mod" appears innocently there; name and package are the reliable place.
+Status: active
+
 ---
 
 # Tried and Abandoned

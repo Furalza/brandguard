@@ -35,6 +35,21 @@ from brandguard.triage.signals import Direction, SignalResult
 # economics in the threat model.
 _ESTABLISHED_ACCOUNT_MAX_YEAR = 2020
 
+# Unauthorized-build markers. A real app carries none of these in its NAME or
+# PACKAGE id; a redistributed, modified build advertises them ("Spotify Premium
+# Mod", "GB WhatsApp", com.app.cracked). Strong markers are decisive on their
+# own; unlock phrases need the whole phrase because "premium"/"pro" alone are
+# legitimate product words (Spotify Premium is a real product).
+_STRONG_BUILD_MARKERS = (
+    "mod", "modded", "cracked", "hacked", "hack", "patched", "cheat",
+    "keygen", "nulled", "warez",
+)
+_UNLOCK_PHRASES = (
+    "premium unlocked", "premium mod", "pro unlocked", "plus unlocked",
+    "vip unlocked", "fully unlocked", "full unlocked", "premium free",
+    "pro free", "unlocked all", "mega mod",
+)
+
 
 def _normset(values: list[str]) -> set[str]:
     return {normalize(v) for v in values}
@@ -116,6 +131,60 @@ def check_package_veto(record: AppRecord, profile: BrandProfile) -> SignalResult
     )
 
 
+def _has_build_marker(text_norm: str) -> tuple[str, ...]:
+    """Return the unauthorized-build markers present in normalized text.
+
+    Strong markers match as whole words (so "mod" does not fire on "model");
+    unlock phrases are multi-word and matched as substrings.
+    """
+    import re
+
+    hits: list[str] = []
+    for marker in _STRONG_BUILD_MARKERS:
+        if re.search(rf"(?:^|\s){re.escape(marker)}(?:\s|$)", text_norm):
+            hits.append(marker)
+    hits += [p for p in _UNLOCK_PHRASES if p in text_norm]
+    return tuple(hits)
+
+
+def check_unauthorized_build_veto(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
+    """Repackaged veto: an app whose name/package advertises a modded or cracked
+    build, shipped by a non-official publisher.
+
+    A modded/cracked build is a repackaged app by definition: the real product,
+    modified and redistributed by someone who is not the publisher. The guard
+    that keeps legitimate mirrors safe is the publisher check: if the publisher
+    matches the official list, this never fires, however a mirror labels the
+    build. Markers are read from the NAME and PACKAGE id only, never the
+    description (where "mod" can appear innocently).
+    """
+    # An official publisher's build is legitimate whatever a mirror calls it.
+    if normalize(record.publisher.name) in _normset(profile.official_publishers):
+        return None
+
+    name_norm = normalize(record.name)
+    pkg_norm = normalize(record.app_id.replace(".", " ").replace("_", " "))
+    markers = _has_build_marker(f"{name_norm} {pkg_norm}")
+    if not markers:
+        return None
+
+    return SignalResult(
+        name="unauthorized_build",
+        direction=Direction.VETO,
+        strength=1.0,
+        text=(
+            f"App name or package advertises an unauthorized build "
+            f"({', '.join(markers)}) from a non-official publisher; "
+            "this is a repackaged, modified redistribution."
+        ),
+        forced_label=Label.REPACKAGED,
+    )
+
+
 def check_vetoes(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
     """Run veto checks in priority order; return the first that fires."""
-    return check_publisher_veto(record, profile) or check_package_veto(record, profile)
+    return (
+        check_publisher_veto(record, profile)
+        or check_package_veto(record, profile)
+        or check_unauthorized_build_veto(record, profile)
+    )
