@@ -350,6 +350,19 @@ Rationale: This is the allowlist a real DRP tool builds as analysts clear findin
 Rejected and why: Hard-coding affiliate patterns in code - every brand differs; it belongs in the profile. Widening the official-domains list to include affiliates - conflates "our domain" with "a related but separate legal entity", which matters for veto semantics elsewhere.
 Status: active
 
+## K-050: Broaden website dorks so Serper finds phishing pages without crt.sh
+Context: crt.sh throttles heavily, and the primary intent is Google-dork discovery via Serper. The website source had only three dorks (brand + giris/mobil giris/hesap), too narrow to surface many phishing pages.
+Decision: build_website_queries now emits ~15 dorks: the brand paired with a Turkish+English credential-bait lexicon (giris, guvenli giris, hesap dogrulama, login, verify account, wallet, ...), plus URL-targeted dorks (inurl:login, intitle+inurl), all excluding the official domains. Serper runs these; crt.sh is not touched.
+Rationale: Google-dork discovery is the intended primary path and does not rate-limit like crt.sh. Widening the lure lexicon and adding inurl/intitle targets the pages phishing actually uses (a brand name plus a login path off the official site). Cost scales with dork count, so --max-queries bounds it.
+Rejected and why: Relying on crt.sh as the main domain source - it throttles too often for routine use; crt.sh stays as the deepest supplementary source, Serper dorks are the workhorse.
+Status: active
+
+## K-051: Expose per-source tuning (max-queries, num, cap) on the hunt CLI
+Context: The engine's runners already accepted max_queries, num and cap, but the unified CLI did not pass them through, so a user could not bound Serper cost or crt.sh volume from the command line (--max-queries errored as unrecognized).
+Decision: hunt.py now accepts optional --max-queries, --num and --cap and forwards only the ones provided into run_source, leaving the engine defaults in place otherwise.
+Rationale: Cost control belongs at the operator's fingertips: the broadened website dorks (K-050) make query count matter, so bounding it from the CLI is necessary. Forwarding only provided values keeps existing behaviour unchanged when the flags are absent.
+Status: active
+
 ---
 
 # Tried and Abandoned

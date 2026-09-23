@@ -58,6 +58,12 @@ def main() -> None:
     parser.add_argument("--source", required=True,
                         help=f"comma-separated, one or more of: {', '.join(SOURCES)}")
     parser.add_argument("--results", type=Path, default=Path("results"))
+    parser.add_argument("--max-queries", type=int, default=None,
+                        help="cap discovery queries per source (Serper/website cost control)")
+    parser.add_argument("--num", type=int, default=None,
+                        help="results per query for search-based sources")
+    parser.add_argument("--cap", type=int, default=None,
+                        help="cap candidates classified for crt.sh")
     args = parser.parse_args()
 
     sources = [s.strip() for s in args.source.split(",") if s.strip()]
@@ -77,8 +83,13 @@ def main() -> None:
     for profile in brands:
         for source in sources:
             print(f"running {source} for {profile.brand_name} ...")
+            kw = {k: v for k, v in (
+                ("max_queries", args.max_queries),
+                ("num", args.num),
+                ("cap", args.cap),
+            ) if v is not None}
             try:
-                result = run_source(profile, source)
+                result = run_source(profile, source, **kw)
             except Exception as exc:  # noqa: BLE001 - one source/brand failing must not stop the sweep
                 print(f"  ! {source} for {profile.brand_name} failed ({type(exc).__name__}); skipping")
                 continue

@@ -129,3 +129,15 @@ def test_allowlist_does_not_shield_real_phishing():
     affiliates = ["ziraatbank.de"]
     f = classify_domain("ziraatbank-giris.com", ["ziraatbank.com.tr"], "Ziraat Bankası", affiliates)
     assert f.verdict == DomainVerdict.LOOKALIKE
+
+
+def test_website_dorks_cover_lures_and_exclude_official():
+    from brandguard.discovery.website_hunt import build_website_queries
+    qs = build_website_queries("PayPal", ["paypal.com"])
+    # excludes official on every dork
+    assert all("-site:paypal.com" in q for q in qs)
+    # covers credential-bait terms and a url-targeted dork
+    assert any("login" in q for q in qs)
+    assert any("inurl:login" in q for q in qs)
+    assert any("giris" in q for q in qs)
+    assert len(qs) >= 10  # meaningfully broader than the original three

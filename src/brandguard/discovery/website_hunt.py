@@ -221,14 +221,29 @@ def classify_domain(
                          confirmed_live=False)
 
 
+# Credential-bait terms attackers pair with a brand on a phishing page, Turkish
+# and English. Each becomes a dork combined with the brand and the official-site
+# exclusion.
+_WEBSITE_LURES = (
+    "giris", "mobil giris", "guvenli giris", "hesap", "hesap dogrulama",
+    "sifre", "musteri girisi", "login", "sign in", "secure login",
+    "verify account", "account", "wallet",
+)
+
+
 def build_website_queries(brand_name: str, official_domains: list[str]) -> list[str]:
-    """Dorks that surface impersonating websites, excluding the official domains."""
+    """Dorks that surface impersonating websites, excluding the official domains.
+
+    Three angles: the brand paired with a credential-bait term; the brand with a
+    login path in the URL (inurl:login); and the brand on a cheap/abuse-prone
+    TLD. All exclude the official domains, so what returns is the brand used off
+    its own site, which is where phishing pages live.
+    """
     excludes = " ".join(f"-site:{d}" for d in official_domains)
-    return [
-        f'"{brand_name}" giris {excludes}',
-        f'"{brand_name}" mobil giris {excludes}',
-        f'"{brand_name}" hesap {excludes}',
-    ]
+    queries = [f'"{brand_name}" {lure} {excludes}' for lure in _WEBSITE_LURES]
+    queries.append(f'"{brand_name}" inurl:login {excludes}')
+    queries.append(f'intitle:"{brand_name}" inurl:(giris OR login OR account) {excludes}')
+    return queries
 
 
 @dataclass
