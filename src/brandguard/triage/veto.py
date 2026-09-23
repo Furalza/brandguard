@@ -162,6 +162,19 @@ def check_unauthorized_build_veto(record: AppRecord, profile: BrandProfile) -> S
     if normalize(record.publisher.name) in _normset(profile.official_publishers):
         return None
 
+    # Some search hits are not app listings at all but articles, how-to guides,
+    # forum threads or government pages that happen to contain "mod apk" in their
+    # title or URL ("how-to-download-minecraft-mod", a gov.in download page). An
+    # article is not a repackaged build, so if the app_id (a URL when no package
+    # was extracted) points at one of these, do not treat it as an app here.
+    app_id_low = record.app_id.lower()
+    _NON_APP_MARKERS = (
+        "/howto", "how-to", "/blog", "/news", "/article", "/watch",
+        "wikipedia.", "reddit.", "youtube.", "medium.", ".gov.", "gov.in",
+    )
+    if "://" in app_id_low and any(m in app_id_low for m in _NON_APP_MARKERS):
+        return None
+
     name_norm = normalize(record.name)
     # app_id is a real package id only when it is not a URL. A search hit whose
     # package could not be extracted carries the raw link as app_id, and a link

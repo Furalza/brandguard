@@ -73,3 +73,32 @@ def test_clean_name_with_marker_only_in_host_does_not_fire():
     rec = _rec("Spotify", "https://modplays.com/apps/spotify", "ModPlays")
     v = check_unauthorized_build_veto(rec, PROFILE)
     assert v is None
+
+
+def test_howto_article_url_is_not_an_app():
+    # A how-to article whose URL/title contains "mod" is not a repackaged app.
+    rec = _rec("How to download Minecraft Mod",
+               "https://apkpure.com/howto/how-to-download-minecraft-mod-on-android", "APKPure")
+    profile = BrandProfile(brand_name="Minecraft", official_domains=["minecraft.net"],
+                           official_publishers=["Mojang"], known_official_apps=["Minecraft"],
+                           sector="unknown")
+    assert check_unauthorized_build_veto(rec, profile) is None
+
+
+def test_government_page_is_not_an_app():
+    rec = _rec("WhatsApp download apk mod",
+               "https://pcs.mahaonline.gov.in/latest/whatsapp-download-apk-mod/", "Gov")
+    profile = BrandProfile(brand_name="WhatsApp", official_domains=["whatsapp.com"],
+                           official_publishers=["WhatsApp LLC"], known_official_apps=["WhatsApp"],
+                           sector="unknown")
+    assert check_unauthorized_build_veto(rec, profile) is None
+
+
+def test_real_aptoide_mod_app_still_flagged():
+    # A genuine mod app on an APK site (aptoide /app) is still repackaged.
+    rec = _rec("Hardcore Mod for MCPE", "https://hardcore-mod-for-mcpe.en.aptoide.com/app", "ModDev")
+    profile = BrandProfile(brand_name="Minecraft", official_domains=["minecraft.net"],
+                           official_publishers=["Mojang"], known_official_apps=["Minecraft"],
+                           sector="unknown")
+    v = check_unauthorized_build_veto(rec, profile)
+    assert v is not None and v.forced_label == Label.REPACKAGED
