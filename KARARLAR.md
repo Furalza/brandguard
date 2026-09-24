@@ -441,6 +441,8 @@ Status: active
 - Bank affiliates surface as detected until allowlisted. On live website/crt.sh runs, a brand's own foreign subsidiaries and sister entities (garantibbva.ro, garantibank.ro, vakifbank.de, vakifyatirim.com.tr) are close enough to the official domain to be lookalikes but are legitimate. They are cleared per brand via known_affiliates (K-049); the Ziraat profile is done, the other bank profiles still need their affiliate lists filled in. Until then those entries show as detected, not as real phishing. No Turkish bank surfaced a genuine active impersonation on either source; the banks are well policed and quickly clean up, so a clean result there is correct, and the genuine detections are on heavily targeted global brands (Binance 13 lookalikes on crt.sh; GTA/Netflix/Spotify modded builds on Serper).
 - App-side mod/cracked detection keys on the app name and package id, not page content. A search hit that is actually an article or a government download page ("how-to-download-...-mod", a gov.in page) is excluded by a non-app-page URL guard rather than by inspecting the page. Fetching each page to confirm a download button or a login form is the more precise but more expensive and riskier route (connecting to a suspected phishing/mod site), left as an extension point.
 - Store developer websites and e-mails are self-declared. Since K-055 they identify a publisher only together with 100k+ installs or an official package id on Play; a source that reports no install figure still accepts the website alone, because there is nothing to check the claim against there.
+- Evaluation drift since the K-025/K-026/K-031 figures: on 2026-09-24 the development set has 45 records and impersonation recall is 0.882 (15 of 17), not the 0.938 (15 of 16) recorded then; one impersonation record added to the set since defers to uncertain, as does "Puan Kazan" (K-025). Takedown FP and missed threats are still 0%, and K-055/K-056 left every label unchanged (measured before and after). Which record changed and why is not yet traced; the older entries keep their original numbers as a record of that day.
+- Registry review lines can name a neighbouring brand's app when a publisher's legal name contains the brand's words: "Aras Kargo Yurt Ici Ve Yurt Disi Tasimacilik A.S." is listed under Yurtici Kargo. Review lines are never written into a profile, so this is noise for the analyst, not a wrong verdict.
 
 ---
 
@@ -464,7 +466,8 @@ features.
    an unofficial publisher" becomes a certainty rather than an inference, and the
    uncertain mirror resolves. This closes the largest genuine information gap.
 
-3. **Real discovery against one live source, rate-limited.** The query expander's
+3. **Real discovery against one live source, rate-limited.** (Since done: live
+   Google Play, Serper and crt.sh sources, K-028 to K-056.) The query expander's
    coverage is measured against a substring model of search, not a live index
    (K-011 known limit). Wiring one real marketplace behind the existing adapter
    interface would replace an assumption with a measurement, and would surface

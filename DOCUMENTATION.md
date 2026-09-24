@@ -57,6 +57,38 @@ domain track. Google Play is well policed and usually clean; the deeper sources
 are where real impersonations surface, and crt.sh shows a phishing domain the
 moment it obtains a certificate, before it is indexed or reported.
 
+The Play scraper (google-play-scraper 1.2.7, the latest release) returns the
+featured top search result without its package id, and that result is usually
+the brand's own main app. `discovery/play_search.py` replaces only that field's
+lookup and recovers the id from the structure the library already uses for the
+other results; every Play search goes through it (K-056). Before the fix the
+hunt missed the most relevant listing of every Play query.
+
+### Brand registry
+
+Brands are listed in `data/brands.csv`, one row each; a row can be just the
+brand name. `python -m brandguard.registry sync --enrich` turns the rows into
+the profiles the hunt reads, in `data/watchlist/` (K-053, K-054):
+
+- Official domain, when not given: accepted only when two independent sources
+  agree, Google (knowledge panel, or a top result about the brand) and the
+  developer site of the brand's established Play app. A single source counts
+  only in forms an impersonator cannot produce (Google's knowledge panel alone,
+  or a Play app with 1M+ installs carrying the full brand name) and is flagged
+  for review. Otherwise the brand is skipped and reported; no domain is guessed,
+  because the veto trusts it.
+- Official publishers, package ids and app titles: taken from Play only for a
+  publisher whose claimed website or e-mail is under an official domain AND who
+  has an app with 100k+ installs (K-055). All its apps then count, including
+  small ones. Anything weaker is a `review` line with the reason.
+- CSV values always win and lookups only add. Lookups are cached in the profile
+  with their evidence and repeated only on `--refresh` or when the official
+  domains change.
+- Safety: only profiles the registry generated are ever changed or removed; a
+  hand-written profile is never touched and a brand it covers is not scanned
+  twice. Any validation error aborts the sync before a write. An online source
+  failing three times in a row stops lookups for that run instead of hammering it.
+
 ### Triage cascade
 
 The cascade spends effort only where it can change an outcome. Most records are
@@ -64,8 +96,13 @@ decided at T0; only conflicting or grey-zone cases reach the expensive tiers.
 
 - Veto: trust is placed in publisher identity, not the publisher name (a name is
   attacker-controlled). An official verdict requires a name match plus an
-  independent verifier (verified flag, website on an official domain, or an
-  established account). A matching name alone does not veto.
+  independent verifier an impersonator cannot type in: a store-verified flag, an
+  established account, an official package id on Google Play (package ids are
+  unique there), or a website on an official domain on a listing with 100k+
+  installs. The website field is self-declared, so on its own it is only a
+  claim: a copied name plus a typed-in domain on a fresh listing was reproduced
+  as passing the old veto and no longer does (K-055). A matching name alone does
+  not veto.
 - Scored signals: name similarity (multi-dimensional, not a single ratio),
   account age (graded), developer history, permission drift (sector-aware, since
   a courier reading SMS is routine but a bank is not), and review consistency
@@ -134,25 +171,33 @@ backoff so a transient throttle is not mistaken for "no lookalikes".
 ## Evaluation
 
 There is no external ground truth, so the evaluation set is part of the solution:
-44 hand-labelled development records across 11 difficulty layers (the hardest and
+45 hand-labelled development records across 11 difficulty layers (the hardest and
 largest being brand ecosystem apps and legitimate third-party tools), plus an
 8-record locked holdout evaluated once.
 
-On the development set, with the deterministic adjudicator:
+On the development set, with the deterministic adjudicator (measured 2026-09-24):
 
-- Takedown false-positive rate: 0% (constraint: under 5%)
-- Missed threats (a real impersonation labelled benign): 0%
-- Impersonation precision 1.0, recall 0.94
-- 84% of records decided at T0
+- Takedown false-positive rate: 0% (0 of 18 takedowns; constraint: under 5%)
+- Missed threats (a real threat labelled benign): 0% (0 of 20)
+- Impersonation precision 1.0, recall 0.88 (15 of 17; the two misses defer to
+  `uncertain`, never to a benign label)
+- Most records are decided at T0; `scripts/evaluate.py` prints the exact share
 
-The locked holdout of unseen records reproduced these figures (6/8 exact, 0%
-takedown FP, 0% missed threats). Confidence was calibrated against the set: an
-early over-statement on benign labels was measured and corrected.
+Earlier decision-log entries report recall 0.94 on 44 records; the record added
+since then defers to `uncertain`. The locked holdout of unseen records, evaluated
+once, gave 6/8 exact, 0% takedown FP and 0% missed threats. Confidence was
+calibrated against the set: an early over-statement on benign labels was
+measured and corrected. Every change to the veto since is checked by running the
+evaluation before and after; K-055 and its refinement left every label unchanged.
 
 The system was also run against live Google Play through an optional source.
 Real data surfaced issues the mock never showed, including a false positive where
 a real bank's official app was flagged for takedown; each was diagnosed and
-fixed. This is documented in the decision log (K-029 to K-032).
+fixed (K-029 to K-032). Later, checking live output against an independent
+source (AppBrain) found the self-declared-website hole (K-055) and the dropped
+top search result (K-056). After K-056 the brand's main app is the first,
+official-labelled result for 18 of 19 watchlist brands; the exception has no
+current app on Play.
 
 ## Setup and use
 
@@ -165,7 +210,10 @@ python run.py --profile data/profiles/ornek_bank.json \
               --records data/testset/ornek_bank.json --pretty
 
 python scripts/evaluate.py         # metrics
-pytest                             # 158 tests
+pytest                             # 237 tests
+
+python -m brandguard.registry sync --enrich        # brands.csv -> data/watchlist
+python -m brandguard.hunt --watchlist data/watchlist --source play,serper
 ```
 
 The LLM tier is optional. With an `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (env
@@ -180,6 +228,15 @@ rule adjudicator, so every command works offline.
 - Live Google Play does not expose publisher account age or verification, so the
   strongest attacker-independent signals are absent there and the system is more
   conservative on live data.
+- A genuine official app under 100k installs whose package id is not yet in the
+  profile is not vetoed on Play; it falls through to scoring and ends at worst
+  `uncertain`, never a takedown. Adding its package to the CSV fixes it.
+- Registry lookups see only the top Play results for the brand name, so an
+  official app that does not rank for it must be added in the CSV. A source that
+  reports no install figure still accepts a claimed website on its own.
+- The Play source depends on an unofficial scraper. The top-result fix (K-056)
+  relies on Play's current data shape; `python scripts/inspect_brand.py "<brand>"`
+  is the quick live check (the main app should be the first line).
 - Real impersonations largely live off Google Play, which is well policed. The
   Serper and crt.sh sources cover third-party apps and certificate logs; further
   stores are one adapter each.
@@ -196,18 +253,21 @@ rule adjudicator, so every command works offline.
 src/brandguard/
   schema.py            shared normalised data model
   discovery/           normalisation, similarity, query expansion, adapters,
-                       live Google Play, Serper, crt.sh, website + domain cascade
+                       live Google Play (play_search), Serper, crt.sh,
+                       website + domain cascade
   triage/              signals, veto, fusion, T1 (icon), T2 (adjudicator)
   eval/                dataset loader, metrics, red-team generator
   hunt_engine.py       unified engine over all sources, timestamped recording
   hunt.py              unified CLI (python -m brandguard.hunt)
+  registry.py          brand CSV -> watchlist profiles, with verified online lookup
 scripts/               evaluation, per-source runners, watchlist scan/diff,
                        brand inspector, fixtures
-data/                  brand profiles, labelled test sets, mock marketplaces
+data/                  brands.csv, watchlist profiles, labelled test sets, mock marketplaces
 run.py                 end-to-end CLI
 KARARLAR.md            decision log, abandoned experiments, known weaknesses, next steps
 ```
 
 `KARARLAR.md` holds the rationale for every non-obvious decision, the experiments
 that were tried and dropped, the known weaknesses, and what a further month would
-change. The threat model behind each signal weight is in `docs/THREAT_MODEL.md`.
+change. The threat model behind each signal weight is in `docs/THREAT_MODEL.md`;
+the registry's CSV format and rules are in `docs/BRAND_REGISTRY.md`.
