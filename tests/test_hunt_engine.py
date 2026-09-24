@@ -33,8 +33,9 @@ def test_two_runs_are_separate_comparable_files():
 
 
 def test_unknown_source_rejected():
-    from brandguard.schema import BrandProfile
     import pytest
+
+    from brandguard.schema import BrandProfile
     with pytest.raises(ValueError):
         run_source(BrandProfile(brand_name="X"), "no_such_source")
 
@@ -44,7 +45,7 @@ def test_watchlist_sweep_isolates_failures(tmp_path, monkeypatch):
     # without aborting the whole sweep.
     import json as _json
 
-    import brandguard.hunt as hunt
+    from brandguard import hunt
     from brandguard.hunt_engine import RunResult
 
     wl = tmp_path / "wl"

@@ -370,6 +370,16 @@ Rationale: A modded/cracked build is a repackaged app, so the repackaged label i
 Rejected and why: A scored signal in fusion - fusion maps scores to impersonation, not repackaged, so a veto with a forced repackaged label is the right shape, consistent with the existing package veto. Reading the description for markers - "mod" appears innocently there; name and package are the reliable place.
 Status: active
 
+## K-053: Brand registry - one CSV as the source of truth for the watchlist
+Context: The watchlist sweep (K-047) scans every profile in data/watchlist, but each profile was a hand-written JSON. That works for three banks and not for a portfolio of hundreds: writing, reviewing and removing a thousand JSON files by hand is slow and error-prone, and the official publisher/package fields that drive the veto (K-014) were being guessed or copied manually from inspect_brand.py.
+Options: (a) keep hand-written JSONs, (b) a one-shot CSV-to-JSON converter, (c) a registry that keeps the watchlist in sync with a CSV, with ownership rules and optional verified enrichment.
+Decision: src/brandguard/registry.py with `python -m brandguard.registry check|sync [--enrich]`. data/brands.csv holds one row per brand (only brand_name and official_domains required; list cells use "|"). `check` validates and prints the plan without writing; `sync` creates, updates and removes profiles to match. Generated profiles carry a `_registry` block; only those are ever changed or removed, a hand-maintained profile (no block) is never touched, and a row already covered by one (same id or shared official domain) is skipped so no brand is scanned twice. Any validation error aborts the whole sync before a write; a CSV with no active brands refuses to prune. Writes are atomic and idempotent (unchanged content is not rewritten). `--enrich` fills official publishers, package ids and app titles from Google Play, accepting a publisher only when its developer website or e-mail is under an official domain; name-only lookalike publishers are listed for review and never written. Enrichment is cached in the profile and re-queried only on --refresh or when the official domains change; three consecutive failures stop enrichment for the run.
+Rationale: The CSV is the smallest representation a person can maintain (Excel, one line per brand, "active=no" to pause), and a sync with explicit ownership is what makes it safe to run on a schedule: a typo, a truncated file or a hand-tuned profile cannot cost coverage. Enrichment applies the same identity rule as the publisher veto (trust the domain, not the name), so automating profile building does not reopen the spoofed-publisher hole K-014 closed. Incremental caching and the circuit breaker keep a thousand-brand run cheap and polite to an unofficial interface. Real-world input is handled explicitly: Turkish-locale Excel writes ";" and cp1254, both are read; pasted URLs are reduced to hosts; unknown columns fail loudly to catch typos; a sector with no permission baseline in triage is reported, because permission drift silently abstains there.
+Rejected and why: (a) does not scale and invites drift between profiles. (b) a one-shot converter cannot remove brands or protect hand-tuned profiles, so the second run is where it breaks. Writing enrichment by top publisher frequency (what inspect_brand.py suggests to a human) - the most frequent publisher on a search page is not proof of identity and would let an impersonator become "official". Storing a manifest outside the profiles - the in-file marker keeps each profile self-describing and survives copying.
+Verified: 33 unit tests (validation with line numbers, cp1254 and ";" input, idempotency, pruning only managed files, manual profiles untouched, no double scan, all-or-nothing on errors, domain-verified enrichment accepting website and e-mail proof and rejecting a name-only lookalike, cache reuse, stale-proof drop, circuit breaker). End to end on a 13-brand CSV next to a hand-written ziraat.json: 12 created, re-run 12 unchanged, deleting a row and deactivating another removed exactly those two profiles.
+Known limit: enrichment sees only the top Play search results for the brand name, so an official app that does not rank for it is not added (add it in the CSV); a publisher whose store listing has neither a website nor an e-mail under an official domain is never auto-accepted, which is deliberate, and subsidiaries on their own domains (e.g. a participation bank) count only when that domain is listed.
+Status: active
+
 ---
 
 # Tried and Abandoned
@@ -404,7 +414,6 @@ Status: active
 
 # With One More Month
 
-_(written before submission)_
 
 The single most valuable month would go to the one measured weakness, not to new
 features.

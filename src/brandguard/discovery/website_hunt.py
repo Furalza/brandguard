@@ -18,9 +18,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol
 
-from brandguard.discovery.domain_variants import expand_domain
 from brandguard.discovery.domain_anatomy import analyze_domain
+from brandguard.discovery.domain_variants import expand_domain
 from brandguard.discovery.normalize import normalize
+
 
 # A lookalike verdict, separate from the app Label because the signals and the
 # meaning differ. An app can be "impersonation"; a domain we have only compared

@@ -12,6 +12,9 @@ mapped onto the same recorded shape). Recording is uniform: one JSON per run
 under results/, one summary row in results/run_log.csv, both keyed by an ISO
 UTC timestamp, the brand and the source, so runs are comparable across sources
 and over time.
+
+python -m brandguard.hunt --brand "X" --official-domain Y --source serper --max-queries 8
+python -m brandguard.hunt --brand "GTA" --official-domain rockstargames.com --source serper --max-queries 8 --num 20
 """
 
 from __future__ import annotations
@@ -21,7 +24,6 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from brandguard.schema import BrandProfile
 

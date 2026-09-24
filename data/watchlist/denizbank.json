@@ -1,0 +1,16 @@
+{
+  "brand_name": "DenizBank",
+  "official_domains": [
+    "denizbank.com"
+  ],
+  "official_publishers": [],
+  "known_official_apps": [],
+  "sector": "banking",
+  "official_package_ids": [],
+  "official_permissions": null,
+  "known_affiliates": [],
+  "_registry": {
+    "managed_by": "brandguard.registry",
+    "source": "brands.csv"
+  }
+}

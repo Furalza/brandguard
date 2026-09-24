@@ -1,0 +1,16 @@
+{
+  "brand_name": "Paribu",
+  "official_domains": [
+    "paribu.com"
+  ],
+  "official_publishers": [],
+  "known_official_apps": [],
+  "sector": "crypto",
+  "official_package_ids": [],
+  "official_permissions": null,
+  "known_affiliates": [],
+  "_registry": {
+    "managed_by": "brandguard.registry",
+    "source": "brands.csv"
+  }
+}

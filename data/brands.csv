@@ -1,0 +1,10 @@
+﻿id,brand_name,official_domains,sector,official_publishers,official_package_ids,known_official_apps,known_affiliates,active,notes
+denizbank,DenizBank,denizbank.com,banking,,,,,yes,
+enpara,Enpara,enpara.com,banking,,,,,yes,
+yurtici,Yurtiçi Kargo,yurticikargo.com,logistics,,,,,yes,
+aras,Aras Kargo,araskargo.com.tr,logistics,,,,,yes,
+mng,MNG Kargo,mngkargo.com.tr,logistics,,,,,yes,
+binance,Binance,binance.com,crypto,,,,,yes,
+btcturk,BtcTurk,btcturk.com,crypto,,,,,yes,
+paribu,Paribu,paribu.com,crypto,,,,,yes,
+paypal,PayPal,paypal.com,payments,,,,,no,global marka; ayrı sweep'te taranıyor
