@@ -36,14 +36,14 @@ def test_copied_name_and_claimed_website_on_a_fresh_listing_is_not_official():
 
 
 def test_established_listing_with_the_official_website_is_official():
-    real = _record("com.binance.dev", downloads=50_000_000)
+    real = _record("com.binance.lite", downloads=50_000_000)  # not yet on the package list
     veto = check_publisher_veto(real, PROFILE)
     assert veto is not None and veto.forced_label is Label.OFFICIAL
     assert "installs" in veto.text
 
 
 def test_small_official_app_on_play_is_official_through_its_package_id():
-    junior = _record("com.binance.junior", downloads=10_000)
+    junior = _record("com.binance.junior", downloads=10_000, website=None)
     veto = check_publisher_veto(junior, PROFILE)
     assert veto is not None and "package id" in veto.text
 
@@ -69,3 +69,23 @@ def test_rejected_claim_does_not_turn_into_a_repackaged_takedown():
     small = _record("com.binance.dev", downloads=500, source="apkpure")
     assert check_publisher_veto(small, PROFILE) is None
     assert check_package_veto(small, PROFILE) is None
+
+
+def test_official_package_on_play_is_official_whatever_website_it_declares():
+    # Bankkart: Ziraat's own app under its card-brand site, not ziraatbank.com.tr
+    ziraat = BrandProfile(
+        brand_name="Ziraat", official_domains=["ziraatbank.com.tr"],
+        official_publishers=["T.C. Ziraat Bankasi A.S."], known_official_apps=[],
+        sector="banking", official_package_ids=["com.bankkart.mobil"],
+    )
+    bankkart = AppRecord(
+        app_id="com.bankkart.mobil", source="google_play_live", name="Bankkart Mobil",
+        publisher=Publisher(name="T.C. Ziraat Bankasi A.S.", website="https://www.bankkart.com.tr"),
+        downloads=10_000_000,
+    )
+    veto = check_publisher_veto(bankkart, ziraat)
+    assert veto is not None and veto.forced_label is Label.OFFICIAL
+    assert "official package id" in veto.text
+    # the same package on a third-party store proves nothing on its own
+    mirror = bankkart.model_copy(update={"source": "apkpure"})
+    assert check_publisher_veto(mirror, ziraat) is None

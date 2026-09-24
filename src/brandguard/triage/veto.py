@@ -11,7 +11,8 @@ An official veto requires two independent conditions:
 1. The publisher name matches the official list (normalized, so a store's
    Turkish flattening still matches).
 2. At least one verifier the attacker cannot cheaply forge is present: a store
-   ``verified`` flag, an account age consistent with an established brand, or a
+   ``verified`` flag, an official package id on Google Play (package ids are
+   unique there), an account age consistent with an established brand, or a
    website under an official domain backed by organic reach (see K-055: the
    website field is self-declared, so on its own it is only a claim).
 
@@ -37,8 +38,8 @@ from brandguard.triage.signals import Direction, SignalResult
 _ESTABLISHED_ACCOUNT_MAX_YEAR = 2020
 
 # A claimed developer website counts only on a listing with this many installs
-# (organic reach an impersonator cannot produce), or on an official package id
-# where the store guarantees package ids are unique.
+# (organic reach an impersonator cannot produce). An official package id counts
+# on its own on stores that guarantee package ids are unique.
 _ESTABLISHED_DOWNLOADS = 100_000
 _UNIQUE_PACKAGE_ID_SOURCES = ("google_play",)  # google_play, google_play_live
 
@@ -69,16 +70,28 @@ def _domain_matches_official(website: str | None, profile: BrandProfile) -> bool
     return any(host == d.lower() or host.endswith("." + d.lower()) for d in profile.official_domains)
 
 
+def _official_package_on_unique_store(record: AppRecord, profile: BrandProfile) -> bool:
+    """An official package id on a store that enforces unique package ids is the listing.
+
+    Nobody but the owner can publish under a package id on Google Play, so a
+    Play listing whose id is on the official list is the brand's own app,
+    whatever website it declares (Bankkart declares its own card-brand site).
+    On other stores any id can be carried, which is what repackaging is.
+    """
+    return (record.source.startswith(_UNIQUE_PACKAGE_ID_SOURCES)
+            and record.app_id in set(profile.official_package_ids))
+
+
 def _website_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
     """Accept a website on an official domain only when the listing backs the claim.
 
     A store's developer website is typed in by the developer, so on its own it
     is a claim an impersonator can copy together with the official name (K-055).
     It identifies the publisher when the listing also shows what an
-    impersonator cannot produce: organic install volume, or an official package
-    id on a store that enforces unique package ids. A source that reports no
-    install figure keeps the earlier rule, since there is nothing to check the
-    claim against; live Play always reports one.
+    impersonator cannot produce: organic install volume. (An official package id
+    on Play is checked separately and needs no website.) A source that reports
+    no install figure keeps the earlier rule, since there is nothing to check
+    the claim against; live Play always reports one.
     """
     if not _domain_matches_official(record.publisher.website, profile):
         return None
@@ -87,9 +100,6 @@ def _website_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
         return base
     if record.downloads >= _ESTABLISHED_DOWNLOADS:
         return f"{base}, with {record.downloads:,}+ installs"
-    unique_ids = record.source.startswith(_UNIQUE_PACKAGE_ID_SOURCES)
-    if unique_ids and record.app_id in set(profile.official_package_ids):
-        return f"{base}, on an official package id ({record.source} package ids are unique)"
     return None
 
 
@@ -100,6 +110,8 @@ def _identity_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
     """
     if record.publisher.verified is True:
         return "store-verified publisher"
+    if _official_package_on_unique_store(record, profile):
+        return f"official package id on {record.source} (package ids are unique there)"
     website = _website_verifier(record, profile)
     if website is not None:
         return website
