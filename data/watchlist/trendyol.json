@@ -7,12 +7,14 @@
     "Trendyol"
   ],
   "known_official_apps": [
+    "Trendyol - Online Alışveriş",
     "Trendyolmilla",
     "Trendyol Satıcı Paneli",
     "Dolap - İkinci El Alışveriş"
   ],
   "sector": "unknown",
   "official_package_ids": [
+    "trendyol.com",
     "com.trendyol.milla.android",
     "com.trendyol.sellercenter",
     "com.dolap.android"
@@ -29,7 +31,7 @@
       "method": "google+play",
       "evidence": [
         "Google result #1: trendyol.com",
-        "Play developer site of com.trendyol.milla.android (13,845,695 installs): trendyol.com"
+        "Play developer site of trendyol.com (156,727,156 installs): trendyol.com"
       ],
       "review": false,
       "checked_at": "2026-09-24"
@@ -44,19 +46,22 @@
         "Trendyol"
       ],
       "package_ids": [
+        "trendyol.com",
         "com.trendyol.milla.android",
         "com.trendyol.sellercenter",
         "com.dolap.android"
       ],
       "apps": [
+        "Trendyol - Online Alışveriş",
         "Trendyolmilla",
         "Trendyol Satıcı Paneli",
         "Dolap - İkinci El Alışveriş"
       ],
       "evidence": [
-        "com.trendyol.milla.android: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)",
-        "com.trendyol.sellercenter: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)",
-        "com.dolap.android: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)"
+        "trendyol.com: 'Trendyol' via developer website trendyol.com, established by trendyol.com (156,727,156 installs)",
+        "com.trendyol.milla.android: 'Trendyol' via developer website trendyol.com, established by trendyol.com (156,727,156 installs)",
+        "com.trendyol.sellercenter: 'Trendyol' via developer website trendyol.com, established by trendyol.com (156,727,156 installs)",
+        "com.dolap.android: 'Trendyol' via developer website trendyol.com, established by trendyol.com (156,727,156 installs)"
       ]
     }
   }

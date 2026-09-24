@@ -4,15 +4,17 @@
     "binance.com"
   ],
   "official_publishers": [
-    "Gulf Binance",
-    "Binance Inc."
+    "Binance Inc.",
+    "Gulf Binance"
   ],
   "known_official_apps": [
+    "Binance: Buy Bitcoin & Crypto",
     "Binance TH: Bitcoin and Crypto",
     "Binance Junior - Crypto Teens"
   ],
   "sector": "crypto",
   "official_package_ids": [
+    "com.binance.dev",
     "com.cloud.thailand",
     "com.binance.junior"
   ],
@@ -28,20 +30,23 @@
         "binance.com"
       ],
       "publishers": [
-        "Gulf Binance",
-        "Binance Inc."
+        "Binance Inc.",
+        "Gulf Binance"
       ],
       "package_ids": [
+        "com.binance.dev",
         "com.cloud.thailand",
         "com.binance.junior"
       ],
       "apps": [
+        "Binance: Buy Bitcoin & Crypto",
         "Binance TH: Bitcoin and Crypto",
         "Binance Junior - Crypto Teens"
       ],
       "evidence": [
+        "com.binance.dev: 'Binance Inc.' via developer website binance.com, established by com.binance.dev (222,723,088 installs)",
         "com.cloud.thailand: 'Gulf Binance' via developer e-mail domain binance.com, established by com.cloud.thailand (2,095,710 installs)",
-        "com.binance.junior: 'Binance Inc.' via developer e-mail domain binance.com, established by com.binance.junior (483,953 installs)"
+        "com.binance.junior: 'Binance Inc.' via developer website binance.com, established by com.binance.dev (222,723,088 installs)"
       ]
     }
   }

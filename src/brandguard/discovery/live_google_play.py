@@ -80,7 +80,11 @@ def search_and_fetch(
     request per hit, so callers should keep query sets small and be ready for
     rate limiting.
     """
-    from google_play_scraper import app, search
+    from google_play_scraper import app
+
+    # The library's own search drops the featured top result's package id, which
+    # is usually the brand's main app; this wrapper recovers it (K-056).
+    from brandguard.discovery.play_search import search
 
     hits = search(query, n_hits=n_hits, lang=lang, country=country)
     records: list[AppRecord] = []

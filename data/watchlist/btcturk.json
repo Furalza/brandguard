@@ -3,10 +3,16 @@
   "official_domains": [
     "btcturk.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "BTCTURK KRIPTO VARLIK ALIM SATIM PLATFORMU A.S."
+  ],
+  "known_official_apps": [
+    "BtcTurk | Kripto : Bitcoin Al"
+  ],
   "sector": "crypto",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.btcturk.pro"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -18,10 +24,18 @@
       "domains": [
         "btcturk.com"
       ],
-      "publishers": [],
-      "package_ids": [],
-      "apps": [],
-      "evidence": []
+      "publishers": [
+        "BTCTURK KRIPTO VARLIK ALIM SATIM PLATFORMU A.S."
+      ],
+      "package_ids": [
+        "com.btcturk.pro"
+      ],
+      "apps": [
+        "BtcTurk | Kripto : Bitcoin Al"
+      ],
+      "evidence": [
+        "com.btcturk.pro: 'BTCTURK KRIPTO VARLIK ALIM SATIM PLATFORMU A.S.' via developer website kripto.btcturk.com, established by com.btcturk.pro (6,426,756 installs)"
+      ]
     }
   }
 }

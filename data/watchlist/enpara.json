@@ -7,10 +7,12 @@
     "Enpara Bank A.Ş"
   ],
   "known_official_apps": [
+    "Enpara Bank Cep Şube",
     "Enpara Bank Şirketim Cep Şube"
   ],
   "sector": "banking",
   "official_package_ids": [
+    "com.enparabank.retail",
     "com.enparabank.corporate"
   ],
   "official_permissions": null,
@@ -28,13 +30,16 @@
         "Enpara Bank A.Ş"
       ],
       "package_ids": [
+        "com.enparabank.retail",
         "com.enparabank.corporate"
       ],
       "apps": [
+        "Enpara Bank Cep Şube",
         "Enpara Bank Şirketim Cep Şube"
       ],
       "evidence": [
-        "com.enparabank.corporate: 'Enpara Bank A.Ş' via developer website enpara.com, established by com.enparabank.corporate (169,529 installs)"
+        "com.enparabank.retail: 'Enpara Bank A.Ş' via developer website enpara.com, established by com.enparabank.retail (5,321,542 installs)",
+        "com.enparabank.corporate: 'Enpara Bank A.Ş' via developer website enpara.com, established by com.enparabank.retail (5,321,542 installs)"
       ]
     }
   }

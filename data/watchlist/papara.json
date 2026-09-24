@@ -7,11 +7,13 @@
     "PAPARA"
   ],
   "known_official_apps": [
+    "Papara",
     "Papara Ticari",
     "Papara CepPOS"
   ],
   "sector": "unknown",
   "official_package_ids": [
+    "com.mobillium.papara",
     "com.papara.merchant",
     "com.provisionpay.softpos.papara"
   ],
@@ -27,7 +29,7 @@
       "method": "google+play",
       "evidence": [
         "Google result #1: papara.com",
-        "Play developer site of com.papara.merchant (202,756 installs): papara.com"
+        "Play developer site of com.mobillium.papara (21,862,049 installs): papara.com"
       ],
       "review": false,
       "checked_at": "2026-09-24"
@@ -42,16 +44,19 @@
         "PAPARA"
       ],
       "package_ids": [
+        "com.mobillium.papara",
         "com.papara.merchant",
         "com.provisionpay.softpos.papara"
       ],
       "apps": [
+        "Papara",
         "Papara Ticari",
         "Papara CepPOS"
       ],
       "evidence": [
-        "com.papara.merchant: 'PAPARA' via developer website papara.com, established by com.papara.merchant (202,756 installs)",
-        "com.provisionpay.softpos.papara: 'PAPARA' via developer website papara.com, established by com.papara.merchant (202,756 installs)"
+        "com.mobillium.papara: 'PAPARA' via developer website papara.com, established by com.mobillium.papara (21,862,049 installs)",
+        "com.papara.merchant: 'PAPARA' via developer website papara.com, established by com.mobillium.papara (21,862,049 installs)",
+        "com.provisionpay.softpos.papara: 'PAPARA' via developer website papara.com, established by com.mobillium.papara (21,862,049 installs)"
       ]
     }
   }

@@ -7,11 +7,13 @@
     "DenizBank"
   ],
   "known_official_apps": [
+    "MobilDeniz",
     "DenizKartım",
     "Deniz’den Toprağa"
   ],
   "sector": "banking",
   "official_package_ids": [
+    "com.denizbank.mobildeniz",
     "com.denizbank.firsatlardenizi",
     "com.denizbank.denizdentopraga"
   ],
@@ -30,16 +32,19 @@
         "DenizBank"
       ],
       "package_ids": [
+        "com.denizbank.mobildeniz",
         "com.denizbank.firsatlardenizi",
         "com.denizbank.denizdentopraga"
       ],
       "apps": [
+        "MobilDeniz",
         "DenizKartım",
         "Deniz’den Toprağa"
       ],
       "evidence": [
-        "com.denizbank.firsatlardenizi: 'DenizBank' via developer website denizbank.com, established by com.denizbank.firsatlardenizi (3,530,289 installs)",
-        "com.denizbank.denizdentopraga: 'DenizBank' via developer website denizbank.com, established by com.denizbank.firsatlardenizi (3,530,289 installs)"
+        "com.denizbank.mobildeniz: 'DenizBank' via developer website denizbank.com, established by com.denizbank.mobildeniz (22,619,907 installs)",
+        "com.denizbank.firsatlardenizi: 'DenizBank' via developer website denizbank.com, established by com.denizbank.mobildeniz (22,619,907 installs)",
+        "com.denizbank.denizdentopraga: 'DenizBank' via developer website denizbank.com, established by com.denizbank.mobildeniz (22,619,907 installs)"
       ]
     }
   }

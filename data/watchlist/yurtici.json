@@ -3,10 +3,16 @@
   "official_domains": [
     "yurticikargo.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "Yurtiçi Kargo Servisi A.Ş."
+  ],
+  "known_official_apps": [
+    "Yurtiçi Kargo"
+  ],
   "sector": "logistics",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.yurticikargo.android"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -18,10 +24,18 @@
       "domains": [
         "yurticikargo.com"
       ],
-      "publishers": [],
-      "package_ids": [],
-      "apps": [],
-      "evidence": []
+      "publishers": [
+        "Yurtiçi Kargo Servisi A.Ş."
+      ],
+      "package_ids": [
+        "com.yurticikargo.android"
+      ],
+      "apps": [
+        "Yurtiçi Kargo"
+      ],
+      "evidence": [
+        "com.yurticikargo.android: 'Yurtiçi Kargo Servisi A.Ş.' via developer website yurticikargo.com, established by com.yurticikargo.android (1,732,017 installs)"
+      ]
     }
   }
 }

@@ -3,10 +3,18 @@
   "official_domains": [
     "araskargo.com.tr"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "Aras Kargo Yurt İçi Ve Yurt Dışı Taşımacılık A.Ş."
+  ],
+  "known_official_apps": [
+    "Aras Kargo",
+    "Aras Akademi"
+  ],
   "sector": "logistics",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.araskargo.mobileapp",
+    "com.enocta.araskademi"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -18,10 +26,21 @@
       "domains": [
         "araskargo.com.tr"
       ],
-      "publishers": [],
-      "package_ids": [],
-      "apps": [],
-      "evidence": []
+      "publishers": [
+        "Aras Kargo Yurt İçi Ve Yurt Dışı Taşımacılık A.Ş."
+      ],
+      "package_ids": [
+        "com.araskargo.mobileapp",
+        "com.enocta.araskademi"
+      ],
+      "apps": [
+        "Aras Kargo",
+        "Aras Akademi"
+      ],
+      "evidence": [
+        "com.araskargo.mobileapp: 'Aras Kargo Yurt İçi Ve Yurt Dışı Taşımacılık A.Ş.' via developer website araskargo.com.tr, established by com.araskargo.mobileapp (956,749 installs)",
+        "com.enocta.araskademi: 'Aras Kargo Yurt İçi Ve Yurt Dışı Taşımacılık A.Ş.' via developer website araskargo.com.tr, established by com.araskargo.mobileapp (956,749 installs)"
+      ]
     }
   }
 }

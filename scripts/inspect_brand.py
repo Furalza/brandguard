@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("--country", default="tr")
     args = parser.parse_args()
 
-    from google_play_scraper import search
+    from brandguard.discovery.play_search import search  # keeps the top result (K-056)
 
     hits = search(args.brand, n_hits=args.hits, lang=args.lang, country=args.country)
     print(f"Top {len(hits)} results for {args.brand!r}:\n")

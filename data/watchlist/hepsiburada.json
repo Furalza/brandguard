@@ -7,10 +7,12 @@
     "Hepsiburada.com"
   ],
   "known_official_apps": [
+    "Hepsiburada: Online Alışveriş",
     "Hepsiburada İş Ortağım"
   ],
   "sector": "unknown",
   "official_package_ids": [
+    "com.pozitron.hepsiburada",
     "com.hepsiburada.merchant"
   ],
   "official_permissions": null,
@@ -25,7 +27,7 @@
       "method": "google+play",
       "evidence": [
         "Google result #1: hepsiburada.com",
-        "Play developer site of com.hepsiburada.merchant (299,406 installs): hepsiburada.com"
+        "Play developer site of com.pozitron.hepsiburada (69,918,549 installs): hepsiburada.com"
       ],
       "review": false,
       "checked_at": "2026-09-24"
@@ -40,13 +42,16 @@
         "Hepsiburada.com"
       ],
       "package_ids": [
+        "com.pozitron.hepsiburada",
         "com.hepsiburada.merchant"
       ],
       "apps": [
+        "Hepsiburada: Online Alışveriş",
         "Hepsiburada İş Ortağım"
       ],
       "evidence": [
-        "com.hepsiburada.merchant: 'Hepsiburada.com' via developer e-mail domain hepsiburada.com, established by com.hepsiburada.merchant (299,406 installs)"
+        "com.pozitron.hepsiburada: 'Hepsiburada.com' via developer website hepsiburada.com, established by com.pozitron.hepsiburada (69,918,549 installs)",
+        "com.hepsiburada.merchant: 'Hepsiburada.com' via developer website hepsiburada.com, established by com.pozitron.hepsiburada (69,918,549 installs)"
       ]
     }
   }

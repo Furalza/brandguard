@@ -449,7 +449,9 @@ class WebSearchClient(Protocol):
 class GooglePlayClient:
     def __init__(self, lang: str = "tr", country: str = "tr") -> None:
         try:
-            from google_play_scraper import app, search
+            from google_play_scraper import app
+
+            from brandguard.discovery.play_search import search  # keeps the top result (K-056)
         except ImportError as exc:  # pragma: no cover - depends on the optional extra
             raise SystemExit('--enrich needs the live extra: pip install -e ".[live]"') from exc
         self._app, self._search = app, search

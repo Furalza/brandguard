@@ -3,10 +3,20 @@
   "official_domains": [
     "paribu.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "PARİBU"
+  ],
+  "known_official_apps": [
+    "Paribu | Bitcoin - Kripto Para",
+    "Paribu Pass: Etkinlik ve Bilet",
+    "Paribu Self | Kripto Cüzdan"
+  ],
   "sector": "crypto",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.paribu.app",
+    "com.paribu.pass",
+    "com.paribu.self"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -18,10 +28,24 @@
       "domains": [
         "paribu.com"
       ],
-      "publishers": [],
-      "package_ids": [],
-      "apps": [],
-      "evidence": []
+      "publishers": [
+        "PARİBU"
+      ],
+      "package_ids": [
+        "com.paribu.app",
+        "com.paribu.pass",
+        "com.paribu.self"
+      ],
+      "apps": [
+        "Paribu | Bitcoin - Kripto Para",
+        "Paribu Pass: Etkinlik ve Bilet",
+        "Paribu Self | Kripto Cüzdan"
+      ],
+      "evidence": [
+        "com.paribu.app: 'PARİBU' via developer website paribu.com, established by com.paribu.app (7,091,524 installs)",
+        "com.paribu.pass: 'PARİBU' via developer website paribu.com, established by com.paribu.app (7,091,524 installs)",
+        "com.paribu.self: 'PARİBU' via developer website paribu.com, established by com.paribu.app (7,091,524 installs)"
+      ]
     }
   }
 }
