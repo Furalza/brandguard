@@ -2,11 +2,12 @@
 
 One CSV lists every brand we protect. The registry turns it into the profile
 JSONs the watchlist sweep reads, so adding or removing a brand is a one-line
-edit, and a thousand brands cost the same effort as three.
+edit, and a thousand brands cost the same effort as three. A row can be just
+the brand name: `sync --enrich` finds the official domain, publishers and apps.
 
 ```
 data/brands.csv --check--> validated rows --sync--> data/watchlist/<id>.json --> hunt --watchlist
-                                           (--enrich: official apps from Google Play, domain-verified)
+                             (--enrich: official domain from Google + Play, then official apps from Play)
 ```
 
 ## Daily use
@@ -14,26 +15,27 @@ data/brands.csv --check--> validated rows --sync--> data/watchlist/<id>.json -->
 ```powershell
 python -m brandguard.registry check            # validate + show what would change, writes nothing
 python -m brandguard.registry sync             # apply: create / update / remove profiles
-python -m brandguard.registry sync --enrich    # also fill official publishers and apps from Play
+python -m brandguard.registry sync --enrich    # look up domains, publishers and apps online
 python -m brandguard.hunt --watchlist data/watchlist --source play,serper
 ```
 
-- Add a brand: add a row, run `sync`.
+- Add a brand: type its name on a new line, run `sync --enrich`.
 - Pause a brand: set `active` to `no`, run `sync` (its profile is removed, the row stays).
 - Remove a brand: delete the row, run `sync`.
 - Work on a few brands only: `--only isbank,btcturk` (never removes anything).
 
 ## Columns
 
-Only `brand_name` and `official_domains` are required. Cells that hold several
-values separate them with `|`, so the file works with both `,` and `;`.
+Only `brand_name` is required. Anything you do fill in always wins over what is
+looked up online. Cells that hold several values separate them with `|`, so
+the file works with both `,` and `;`.
 
 | Column | Example | Notes |
 |---|---|---|
 | id | `isbank` | Profile file name. Default: slug of the brand name. |
 | brand_name | `Turkiye Is Bankasi` | Real spelling, Turkish letters welcome. |
-| official_domains | `isbank.com.tr` | Pasted URLs are reduced to the host. |
-| sector | `banking` | `banking`, `logistics`, `crypto` have a permission baseline; `kargo`, `banka`, `kripto` are accepted aliases. Other sectors work, permission drift abstains and `check` says so. |
+| official_domains | `isbank.com.tr` | Discovered when empty. Pasted URLs are reduced to the host. |
+| sector | `banking` | Optional; default `unknown`. `banking`, `logistics`, `crypto` have a permission baseline (`kargo`, `banka`, `kripto` accepted); for other sectors permission drift abstains and `check` says so. |
 | official_publishers | `Turkiye Is Bankasi A.S.` | Exact store publisher string. |
 | official_package_ids | `com.pozitron.iscep` | Checked for package-id shape. |
 | known_official_apps | `Isbank|Maximum Mobil` | |
@@ -60,6 +62,26 @@ Turkish Windows default (cp1254, `;` separated). A `brand_name` starting with
 
 To take a generated profile under manual control, delete its `_registry` block.
 
+## Domain discovery
+
+For a row without `official_domains`, `--enrich` finds the official domain from
+two independent sources: one Google search (Serper, `SERPER_API_KEY` in `.env`)
+and one Google Play search. Accepted, strongest first:
+
+| Method | When | Review note |
+|---|---|---|
+| `google+play` | Google's knowledge panel or a top result about the brand matches the developer site of the brand's Play app | no |
+| `google_knowledge_panel` | only Google's knowledge panel has a website | yes |
+| `play_popular_app` | only Play: developer site of an app with 1M+ installs that carries the full brand name | yes |
+
+Otherwise the brand is skipped (`? skip-no-domain`) and nothing is guessed: a
+wrong official domain would make the veto trust an impersonator. Social
+networks, stores, encyclopedias and free mail providers never count as a brand
+site. The proof is stored under `_registry.discovery` in the profile; a
+review note is printed once, when the domain is first found. Typing the domain
+into the CSV confirms it and replaces the discovered one. Without a Serper key
+only the Play rule is available.
+
 ## Enrichment
 
 `--enrich` searches Google Play for the brand and accepts a publisher only when
@@ -68,8 +90,10 @@ Apps from an accepted publisher become official package ids and titles. A
 publisher that merely resembles the brand by name is listed under `review` and
 never written: the name is attacker-controlled, the domain is not (K-014).
 
-Enrichment is incremental and cached in the profile. A brand is queried again
-only with `--refresh` or when its official domains change (the old proof is
-then dropped). CSV values always come first; enrichment only adds. After three
-consecutive failures (Play down or rate-limiting) enrichment stops for that
-run and the remaining profiles are written from the CSV.
+Discovery and enrichment share one Play search per brand and are cached in the
+profile. A brand is queried again only with `--refresh`, when its official
+domains change (the old proof is then dropped), or while its domain is still
+unresolved. CSV values always come first; lookups only add. After three
+consecutive failures (a source down or rate-limiting) online lookup stops for
+that run; the remaining brands use the CSV and the cache, and a brand that was
+resolved before keeps its profile.

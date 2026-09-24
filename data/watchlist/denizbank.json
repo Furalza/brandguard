@@ -3,14 +3,44 @@
   "official_domains": [
     "denizbank.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "DenizBank"
+  ],
+  "known_official_apps": [
+    "DenizKartım",
+    "Deniz’den Toprağa"
+  ],
   "sector": "banking",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.denizbank.firsatlardenizi",
+    "com.denizbank.denizdentopraga"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
     "managed_by": "brandguard.registry",
-    "source": "brands.csv"
+    "source": "brands.csv",
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "denizbank.com"
+      ],
+      "publishers": [
+        "DenizBank"
+      ],
+      "package_ids": [
+        "com.denizbank.firsatlardenizi",
+        "com.denizbank.denizdentopraga"
+      ],
+      "apps": [
+        "DenizKartım",
+        "Deniz’den Toprağa"
+      ],
+      "evidence": [
+        "com.denizbank.firsatlardenizi: 'DenizBank' verified by developer website denizbank.com",
+        "com.denizbank.denizdentopraga: 'DenizBank' verified by developer website denizbank.com"
+      ]
+    }
   }
 }

@@ -3,14 +3,46 @@
   "official_domains": [
     "binance.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "Gulf Binance",
+    "Binance Inc."
+  ],
+  "known_official_apps": [
+    "Binance TH: Bitcoin and Crypto",
+    "Binance Junior - Crypto Teens"
+  ],
   "sector": "crypto",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.cloud.thailand",
+    "com.binance.junior"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
     "managed_by": "brandguard.registry",
-    "source": "brands.csv"
+    "source": "brands.csv",
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "binance.com"
+      ],
+      "publishers": [
+        "Gulf Binance",
+        "Binance Inc."
+      ],
+      "package_ids": [
+        "com.cloud.thailand",
+        "com.binance.junior"
+      ],
+      "apps": [
+        "Binance TH: Bitcoin and Crypto",
+        "Binance Junior - Crypto Teens"
+      ],
+      "evidence": [
+        "com.cloud.thailand: 'Gulf Binance' verified by developer e-mail domain binance.com",
+        "com.binance.junior: 'Binance Inc.' verified by developer e-mail domain binance.com"
+      ]
+    }
   }
 }

@@ -9,10 +9,13 @@ from brandguard.registry import (
     MANAGED_KEY,
     Action,
     BrandEntry,
+    OnlineResolver,
     apply_sync,
+    discover_domain,
     enrich_from_play,
     load_registry,
     main,
+    mentions_brand,
     normalize_domain,
     parse_registry,
     plan_sync,
@@ -325,7 +328,7 @@ def test_cli_only_does_not_prune_other_brands(tmp_path):
 
 def test_cli_returns_nonzero_on_invalid_csv(tmp_path):
     csv_path = tmp_path / "brands.csv"
-    csv_path.write_text("brand_name,official_domains\nAlpha,\n", encoding="utf-8")
+    csv_path.write_text("brand_name,official_domains\nAlpha,not a domain\n", encoding="utf-8")
     assert main(["check", "--csv", str(csv_path), "--watchlist", str(tmp_path / "w")]) == 1
 
 
@@ -369,3 +372,138 @@ def test_failed_refresh_keeps_previous_enrichment(tmp_path):
     report = _sync(reg, tmp_path, enricher=down, refresh=True)
     assert _actions(report) == {"ziraat.json": Action.UNCHANGED}
     assert any("previous enrichment kept" in w for w in report.warnings)
+
+
+# --- domain discovery (brand name only) ---------------------------------------
+
+PARIBU_PLAY = [
+    {"appId": "com.paribu.app", "title": "Paribu | Bitcoin Al Sat", "developer": "Paribu",
+     "developerWebsite": "https://www.paribu.com", "realInstalls": 5_000_000},
+    {"appId": "com.fake.paribu", "title": "Paribu Airdrop", "developer": "Paribu Destek",
+     "developerWebsite": "https://paribu-airdrop.xyz", "realInstalls": 900},
+    {"appId": "com.cointracker", "title": "Kripto Takip", "developer": "Tracker Ltd",
+     "developerWebsite": "https://tracker.example.com", "realInstalls": 50_000},
+]
+PARIBU_GOOGLE = {
+    "knowledgeGraph": {"title": "Paribu", "website": "https://www.paribu.com/"},
+    "organic": [{"title": "Paribu - Wikipedia", "link": "https://tr.wikipedia.org/wiki/Paribu"},
+                {"title": "Paribu", "link": "https://www.paribu.com/"}],
+}
+
+
+class FakeWeb:
+    def __init__(self, result):
+        self.result, self.calls = result, 0
+
+    def lookup(self, query):
+        self.calls += 1
+        return self.result
+
+
+def test_mentions_brand_ignores_generic_words():
+    assert mentions_brand("Is Bankasi Mobil", "T\u00fcrkiye \u0130\u015f Bankas\u0131") is False
+    assert mentions_brand("T\u00fcrkiye \u0130\u015f Bankas\u0131 A.\u015e.",
+                          "T\u00fcrkiye \u0130\u015f Bankas\u0131")
+    assert mentions_brand("Yap\u0131 Kredi Mobil", "Yap\u0131 Kredi")
+    assert mentions_brand("mngkargo.com.tr", "MNG Kargo")
+    assert not mentions_brand("Ziraat Mobil", "Paribu")
+
+
+def test_discovery_needs_google_and_play_to_agree():
+    found = discover_domain("Paribu", PARIBU_PLAY, PARIBU_GOOGLE)
+    assert found.domains == ["paribu.com"]
+    assert found.method == "google+play" and not found.review
+    assert any("com.paribu.app" in e for e in found.evidence)
+
+
+def test_discovery_never_takes_a_low_install_lookalike_site():
+    only_fake = [PARIBU_PLAY[1]]
+    assert discover_domain("Paribu", only_fake, None) is None
+    # Google's result for a different site does not rescue it either
+    assert discover_domain("Paribu", only_fake, {"organic": [
+        {"title": "Paribu", "link": "https://paribu.com"}]}) is None
+
+
+def test_discovery_single_source_rules_are_flagged_for_review():
+    panel_only = discover_domain("Paribu", [], PARIBU_GOOGLE)
+    assert panel_only.domains == ["paribu.com"] and panel_only.review
+    play_only = discover_domain("Paribu", PARIBU_PLAY, None)
+    assert play_only.domains == ["paribu.com"] and play_only.method == "play_popular_app"
+    assert play_only.review
+
+
+def test_discovery_skips_social_and_mail_hosts():
+    play = [{"appId": "a.b.c", "title": "Paribu", "developer": "Paribu",
+             "developerWebsite": "https://instagram.com/paribu",
+             "developerEmail": "paribu@gmail.com", "realInstalls": 9_000_000}]
+    assert discover_domain("Paribu", play, None) is None
+
+
+def _resolver(play_listings, google):
+    return OnlineResolver(FakePlay(play_listings), FakeWeb(google))
+
+
+def test_brand_name_only_row_becomes_a_full_profile(tmp_path):
+    reg = parse_registry("brand_name\nParibu\n", source="brands.csv")
+    assert reg.ok
+    resolver = _resolver(PARIBU_PLAY, PARIBU_GOOGLE)
+    report = _sync(reg, tmp_path, enricher=resolver.enrich, discoverer=resolver.discover)
+    assert _actions(report) == {"paribu.json": Action.CREATE}
+    data = json.loads((tmp_path / "paribu.json").read_text(encoding="utf-8"))
+    assert data["official_domains"] == ["paribu.com"]
+    assert data["official_publishers"] == ["Paribu"]
+    assert data["official_package_ids"] == ["com.paribu.app"]
+    assert data[MANAGED_KEY]["discovery"]["method"] == "google+play"
+    assert resolver.play.calls == 1  # discovery and enrichment share one Play search
+    assert any("com.fake.paribu" in r for r in report.review)
+
+
+def test_discovery_is_cached_and_csv_domain_wins(tmp_path):
+    resolver = _resolver(PARIBU_PLAY, PARIBU_GOOGLE)
+    kw = {"enricher": resolver.enrich, "discoverer": resolver.discover}
+    _sync(parse_registry("brand_name\nParibu\n", source="brands.csv"), tmp_path, **kw)
+    report = _sync(parse_registry("brand_name\nParibu\n", source="brands.csv"), tmp_path, **kw)
+    assert resolver.web.calls == 1 and _actions(report) == {"paribu.json": Action.UNCHANGED}
+    # a plain sync (no --enrich) keeps the discovered domain
+    _sync(parse_registry("brand_name\nParibu\n", source="brands.csv"), tmp_path)
+    assert json.loads((tmp_path / "paribu.json").read_text(encoding="utf-8"))[
+        "official_domains"] == ["paribu.com"]
+    # a domain typed into the CSV replaces the discovered one
+    _sync(parse_registry("brand_name,official_domains\nParibu,paribu.com.tr\n",
+                         source="brands.csv"), tmp_path)
+    data = json.loads((tmp_path / "paribu.json").read_text(encoding="utf-8"))
+    assert data["official_domains"] == ["paribu.com.tr"]
+    assert "discovery" not in data[MANAGED_KEY]
+
+
+def test_unresolved_brand_is_skipped_not_guessed(tmp_path):
+    resolver = _resolver([], {"organic": []})
+    report = _sync(parse_registry("brand_name\nNobody Knows Ltd\n"), tmp_path,
+                   enricher=resolver.enrich, discoverer=resolver.discover)
+    assert _actions(report) == {"nobody_knows_ltd.json": Action.SKIP_UNRESOLVED}
+    assert not list(tmp_path.glob("*.json"))
+
+
+def test_row_without_domain_and_without_enrich_is_skipped(tmp_path):
+    report = _sync(parse_registry("brand_name\nParibu\n"), tmp_path)
+    assert _actions(report) == {"paribu.json": Action.SKIP_UNRESOLVED}
+    assert "sync --enrich" in report.changes[0].reason
+
+
+def test_failed_lookup_keeps_a_previously_resolved_profile(tmp_path):
+    resolver = _resolver(PARIBU_PLAY, PARIBU_GOOGLE)
+    reg = parse_registry("brand_name\nParibu\n", source="brands.csv")
+    _sync(reg, tmp_path, enricher=resolver.enrich, discoverer=resolver.discover)
+
+    def down(entry):
+        raise ConnectionError
+
+    _sync(reg, tmp_path, enricher=down, discoverer=down, refresh=True)
+    data = json.loads((tmp_path / "paribu.json").read_text(encoding="utf-8"))
+    assert data["official_domains"] == ["paribu.com"]
+
+
+def test_play_only_rule_needs_the_full_brand_name():
+    calculator = [{"appId": "com.kredi.hesap", "title": "Kredi Hesaplama", "developer": "Hesap Ltd",
+                   "developerWebsite": "https://kredihesap.example.com", "realInstalls": 5_000_000}]
+    assert discover_domain("Yap\u0131 Kredi", calculator, None) is None

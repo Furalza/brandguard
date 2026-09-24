@@ -1,0 +1,58 @@
+{
+  "brand_name": "Papara",
+  "official_domains": [
+    "papara.com"
+  ],
+  "official_publishers": [
+    "PAPARA"
+  ],
+  "known_official_apps": [
+    "Papara Ticari",
+    "Papara CepPOS"
+  ],
+  "sector": "unknown",
+  "official_package_ids": [
+    "com.papara.merchant",
+    "com.provisionpay.softpos.papara"
+  ],
+  "official_permissions": null,
+  "known_affiliates": [],
+  "_registry": {
+    "managed_by": "brandguard.registry",
+    "source": "brands.csv",
+    "discovery": {
+      "domains": [
+        "papara.com"
+      ],
+      "method": "google+play",
+      "evidence": [
+        "Google result #1: papara.com",
+        "Play developer site of com.papara.merchant (202,756 installs): papara.com"
+      ],
+      "review": false,
+      "checked_at": "2026-09-24"
+    },
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "papara.com"
+      ],
+      "publishers": [
+        "PAPARA"
+      ],
+      "package_ids": [
+        "com.papara.merchant",
+        "com.provisionpay.softpos.papara"
+      ],
+      "apps": [
+        "Papara Ticari",
+        "Papara CepPOS"
+      ],
+      "evidence": [
+        "com.papara.merchant: 'PAPARA' verified by developer website papara.com",
+        "com.provisionpay.softpos.papara: 'PAPARA' verified by developer website papara.com"
+      ]
+    }
+  }
+}

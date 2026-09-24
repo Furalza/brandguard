@@ -1,0 +1,53 @@
+{
+  "brand_name": "Hepsiburada",
+  "official_domains": [
+    "hepsiburada.com"
+  ],
+  "official_publishers": [
+    "Hepsiburada.com"
+  ],
+  "known_official_apps": [
+    "Hepsiburada İş Ortağım"
+  ],
+  "sector": "unknown",
+  "official_package_ids": [
+    "com.hepsiburada.merchant"
+  ],
+  "official_permissions": null,
+  "known_affiliates": [],
+  "_registry": {
+    "managed_by": "brandguard.registry",
+    "source": "brands.csv",
+    "discovery": {
+      "domains": [
+        "hepsiburada.com"
+      ],
+      "method": "google+play",
+      "evidence": [
+        "Google result #1: hepsiburada.com",
+        "Play developer site of com.hepsiburada.merchant (299,406 installs): hepsiburada.com"
+      ],
+      "review": false,
+      "checked_at": "2026-09-24"
+    },
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "hepsiburada.com"
+      ],
+      "publishers": [
+        "Hepsiburada.com"
+      ],
+      "package_ids": [
+        "com.hepsiburada.merchant"
+      ],
+      "apps": [
+        "Hepsiburada İş Ortağım"
+      ],
+      "evidence": [
+        "com.hepsiburada.merchant: 'Hepsiburada.com' verified by developer e-mail domain hepsiburada.com"
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "brand_name": "Trendyol",
+  "official_domains": [
+    "trendyol.com"
+  ],
+  "official_publishers": [
+    "Trendyol"
+  ],
+  "known_official_apps": [
+    "Trendyolmilla",
+    "Trendyol Satıcı Paneli",
+    "Dolap - İkinci El Alışveriş"
+  ],
+  "sector": "unknown",
+  "official_package_ids": [
+    "com.trendyol.milla.android",
+    "com.trendyol.sellercenter",
+    "com.dolap.android"
+  ],
+  "official_permissions": null,
+  "known_affiliates": [],
+  "_registry": {
+    "managed_by": "brandguard.registry",
+    "source": "brands.csv",
+    "discovery": {
+      "domains": [
+        "trendyol.com"
+      ],
+      "method": "google+play",
+      "evidence": [
+        "Google result #1: trendyol.com",
+        "Play developer site of com.trendyol.milla.android (13,845,695 installs): trendyol.com"
+      ],
+      "review": false,
+      "checked_at": "2026-09-24"
+    },
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "trendyol.com"
+      ],
+      "publishers": [
+        "Trendyol"
+      ],
+      "package_ids": [
+        "com.trendyol.milla.android",
+        "com.trendyol.sellercenter",
+        "com.dolap.android"
+      ],
+      "apps": [
+        "Trendyolmilla",
+        "Trendyol Satıcı Paneli",
+        "Dolap - İkinci El Alışveriş"
+      ],
+      "evidence": [
+        "com.trendyol.milla.android: 'Trendyol' verified by developer e-mail domain trendyol.com",
+        "com.trendyol.sellercenter: 'Trendyol' verified by developer e-mail domain trendyol.com",
+        "com.dolap.android: 'Trendyol' verified by developer e-mail domain trendyol.com"
+      ]
+    }
+  }
+}

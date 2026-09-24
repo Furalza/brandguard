@@ -3,14 +3,39 @@
   "official_domains": [
     "enpara.com"
   ],
-  "official_publishers": [],
-  "known_official_apps": [],
+  "official_publishers": [
+    "Enpara Bank A.Ş"
+  ],
+  "known_official_apps": [
+    "Enpara Bank Şirketim Cep Şube"
+  ],
   "sector": "banking",
-  "official_package_ids": [],
+  "official_package_ids": [
+    "com.enparabank.corporate"
+  ],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
     "managed_by": "brandguard.registry",
-    "source": "brands.csv"
+    "source": "brands.csv",
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "enpara.com"
+      ],
+      "publishers": [
+        "Enpara Bank A.Ş"
+      ],
+      "package_ids": [
+        "com.enparabank.corporate"
+      ],
+      "apps": [
+        "Enpara Bank Şirketim Cep Şube"
+      ],
+      "evidence": [
+        "com.enparabank.corporate: 'Enpara Bank A.Ş' verified by developer website enpara.com"
+      ]
+    }
   }
 }

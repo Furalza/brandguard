@@ -11,6 +11,17 @@
   "known_affiliates": [],
   "_registry": {
     "managed_by": "brandguard.registry",
-    "source": "brands.csv"
+    "source": "brands.csv",
+    "enrichment": {
+      "source": "google_play",
+      "checked_at": "2026-09-24",
+      "domains": [
+        "yurticikargo.com"
+      ],
+      "publishers": [],
+      "package_ids": [],
+      "apps": [],
+      "evidence": []
+    }
   }
 }

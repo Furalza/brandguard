@@ -5,19 +5,20 @@ per brand does not scale past a handful, so the registry keeps brands as rows in
 a CSV (editable in Excel) and generates the profile JSONs the hunt sweep reads:
 
     data/brands.csv  --check-->  validated rows  --sync-->  data/watchlist/<id>.json
-                                                  (--enrich: official apps from Google Play)
+                           (--enrich: official domain, publishers and apps looked up online)
 
     python -m brandguard.registry check
-    python -m brandguard.registry sync
     python -m brandguard.registry sync --enrich
     python -m brandguard.hunt --watchlist data/watchlist --source play,serper
 
-CSV columns (only brand_name and official_domains are required; list cells use
-"|" between values, so the file works with both "," and ";" delimiters):
+The smallest CSV is a single column: a "brand_name" header and one brand per
+line. Everything else is optional and, when given, always wins over what is
+looked up online. List cells use "|" between values, so the file works with
+both "," and ";" delimiters:
 
     id                    profile file name; defaults to a slug of brand_name
-    brand_name            e.g. Ziraat Bankasi
-    official_domains      ziraatbank.com.tr|ziraat.com.tr
+    brand_name            e.g. Ziraat Bankasi (the only required column)
+    official_domains      ziraatbank.com.tr|ziraat.com.tr (discovered when empty)
     sector                banking, logistics, crypto ... (default: unknown)
     official_publishers   exact publisher strings as the store shows them
     official_package_ids  tr.com.ziraat.ziraatmobil|...
@@ -36,11 +37,20 @@ Ownership rules (the safety model of sync):
   * Any validation error aborts the whole sync before a single file is written,
     so a typo can never prune half the watchlist.
 
-Enrichment (--enrich) fills official publishers, package ids and app titles
-from Google Play, but only for publishers whose developer website or e-mail is
-under one of the brand's official domains. A publisher name that merely looks
-right is reported for review, never written: the name is attacker-controlled,
-the domain proof is not (the same rule as the publisher veto, K-014).
+Online lookup (--enrich) runs in two steps, both cached in the profile:
+
+  1. Domain discovery, only for rows without official_domains. The official
+     domain is accepted when two independent sources agree: Google's knowledge
+     panel or top result (via Serper) and the developer website of the brand's
+     app on Google Play. One source alone is accepted only in the forms an
+     attacker cannot cheaply produce - Google's knowledge panel, or a Play app
+     with at least a million installs - and is flagged for review. Otherwise
+     the brand is skipped and reported; no domain is ever guessed.
+  2. Enrichment fills official publishers, package ids and app titles from
+     Google Play, but only for publishers whose developer website or e-mail is
+     under an official domain. A publisher name that merely looks right is
+     reported for review, never written: the name is attacker-controlled, the
+     domain proof is not (the same rule as the publisher veto, K-014).
 """
 
 from __future__ import annotations
@@ -49,12 +59,13 @@ import argparse
 import csv
 import io
 import json
+import os
 import re
 import sys
 import time
 import unicodedata
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
@@ -66,7 +77,7 @@ MANAGED_KEY = "_registry"
 MANAGER = "brandguard.registry"
 LIST_SEP = "|"
 
-REQUIRED_COLUMNS = ("brand_name", "official_domains")
+REQUIRED_COLUMNS = ("brand_name",)
 LIST_COLUMNS = (
     "official_domains",
     "official_publishers",
@@ -132,8 +143,7 @@ def normalize_domain(value: str) -> str:
     host = re.sub(r"^[a-z][a-z0-9+.-]*://", "", host)
     host = re.split(r"[/?#]", host, maxsplit=1)[0]
     host = host.split("@")[-1].split(":")[0].rstrip(".")
-    host = host.removeprefix("www.")
-    return host
+    return host.removeprefix("www.")
 
 
 def host_under(host: str, domains: Iterable[str]) -> bool:
@@ -227,8 +237,6 @@ def _parse_row(row: dict[str, str], line: int, errors: list[str]) -> BrandEntry 
 
     raw_domains = _split(row.get("official_domains"))
     domains = _dedupe(normalize_domain(d) for d in raw_domains)
-    if not domains:
-        err(f"{where}: official_domains is empty (at least one is required)")
     for d in domains:
         if not _HOST_RE.match(d):
             err(f"{where}: {d!r} is not a valid domain")
@@ -351,15 +359,87 @@ def load_registry(path: Path) -> Registry:
 
 
 # ---------------------------------------------------------------------------
-# Google Play enrichment (domain-verified)
+# Online lookup: domain discovery and Google Play enrichment
 # ---------------------------------------------------------------------------
 
+# Words too common to identify a brand on their own ("Turkiye Is Bankasi" must
+# not match every app that says "bankasi").
+_GENERIC_TOKENS = frozenset({
+    "bank", "banka", "bankasi", "turkiye", "turk", "mobil", "mobile", "app", "kargo",
+    "cargo", "holding", "group", "grup", "sirketi", "anonim", "limited", "the",
+})
+
+# Hosts that are never a brand's own site: social networks, encyclopedias,
+# stores, complaint sites and free mail providers.
+_NOT_A_BRAND_SITE = (
+    "wikipedia.org", "linkedin.com", "facebook.com", "instagram.com", "twitter.com",
+    "x.com", "youtube.com", "tiktok.com", "play.google.com", "apps.apple.com",
+    "google.com", "sikayetvar.com", "eksisozluk.com", "gmail.com", "hotmail.com",
+    "outlook.com", "yahoo.com", "icloud.com", "yandex.com", "yandex.com.tr",
+    "github.com", "medium.com", "blogspot.com", "wordpress.com", "sites.google.com",
+    "bit.ly", "linktr.ee",
+)
+
+# A Play app with this many installs is treated as the brand's real app when it
+# is the only evidence: organic download volume is what an impersonator cannot
+# produce (THREAT_MODEL.md, "Cannot do").
+PLAY_ONLY_MIN_INSTALLS = 1_000_000
+
+
+def _brand_keys(brand: str) -> tuple[str, list[str]]:
+    slug = slugify(brand)
+    distinctive = [t for t in slug.split("_") if len(t) >= 4 and t not in _GENERIC_TOKENS]
+    return slug.replace("_", ""), distinctive
+
+
+def mentions_brand(text: str, brand: str, *, full_name: bool = False) -> bool:
+    """True when text names the brand: its full name, or one of its distinctive words.
+
+    With ``full_name`` only the complete brand name counts ("Yapi Kredi", not
+    just "kredi"), for decisions that rest on a single source.
+    """
+    compact_text = slugify(text).replace("_", "")
+    if not compact_text:
+        return False
+    compact_brand, distinctive = _brand_keys(brand)
+    if len(compact_brand) >= 3 and compact_brand in compact_text:
+        return True
+    return not full_name and any(token in compact_text for token in distinctive)
+
+
+def _is_brand_site(host: str) -> bool:
+    return bool(host) and bool(_HOST_RE.match(host)) and not host_under(host, _NOT_A_BRAND_SITE)
+
+
+def _same_site(a: str, b: str) -> bool:
+    return host_under(a, [b]) or host_under(b, [a])
+
+
+def _installs(item: dict) -> int:
+    for key in ("realInstalls", "minInstalls"):
+        value = item.get(key)
+        if isinstance(value, int):
+            return value
+    digits = re.sub(r"\D", "", str(item.get("installs") or ""))
+    return int(digits) if digits else 0
+
+
+def _email_domain(email: object) -> str:
+    return email.split("@")[-1].strip().lower() if isinstance(email, str) and "@" in email else ""
+
+
 class PlayClient(Protocol):
-    """The two calls enrichment needs. The real one wraps google-play-scraper."""
+    """The two calls the lookup needs. The real one wraps google-play-scraper."""
 
     def search(self, query: str, n_hits: int) -> list[dict]: ...
 
     def details(self, app_id: str) -> dict: ...
+
+
+class WebSearchClient(Protocol):
+    """One Google search returning the raw Serper JSON (organic + knowledgeGraph)."""
+
+    def lookup(self, query: str) -> dict: ...
 
 
 class GooglePlayClient:
@@ -376,6 +456,147 @@ class GooglePlayClient:
 
     def details(self, app_id: str) -> dict:
         return self._app(app_id, lang=self.lang, country=self.country)
+
+
+def _load_dotenv(path: Path = Path(".env")) -> None:
+    """Fill gaps in os.environ from .env, like the adjudicator and Serper source do."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#") and key.strip() not in os.environ:
+            os.environ[key.strip()] = value.strip().strip("'\"")
+
+
+class SerperWebClient:
+    """Google search through Serper, localised to Turkey. Needs SERPER_API_KEY."""
+
+    def __init__(self) -> None:
+        _load_dotenv()
+        self._key = os.environ.get("SERPER_API_KEY", "")
+        if not self._key:
+            raise RuntimeError("SERPER_API_KEY is not set")
+
+    def lookup(self, query: str) -> dict:
+        import requests
+
+        response = requests.post(
+            "https://google.serper.dev/search",
+            headers={"X-API-KEY": self._key, "Content-Type": "application/json"},
+            json={"q": query, "gl": "tr", "hl": "tr", "num": 10},
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+def fetch_play_listings(brand: str, client: PlayClient, *, hits: int = 15) -> list[dict]:
+    """Search Play for the brand and merge each hit with its detail page."""
+    listings: list[dict] = []
+    for hit in client.search(brand, hits):
+        app_id = str(hit.get("appId") or "").strip()
+        if not app_id:
+            continue
+        try:
+            detail = client.details(app_id) or {}
+        except Exception:  # noqa: BLE001 - one failed detail must not lose the brand
+            detail = {}
+        listings.append({**hit, **detail, "appId": app_id})
+    return listings
+
+
+@dataclass
+class Discovery:
+    """How a brand's official domain was found, kept so the proof can be audited."""
+
+    domains: list[str]
+    method: str
+    evidence: list[str] = field(default_factory=list)
+    review: bool = False
+    checked_at: str = ""
+
+    def to_json(self) -> dict:
+        return {
+            "domains": self.domains, "method": self.method, "evidence": self.evidence,
+            "review": self.review, "checked_at": self.checked_at,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> Discovery:
+        return cls(
+            domains=list(data.get("domains", [])), method=str(data.get("method", "")),
+            evidence=list(data.get("evidence", [])), review=bool(data.get("review")),
+            checked_at=str(data.get("checked_at", "")),
+        )
+
+
+def discover_domain(
+    brand: str, listings: list[dict], web_result: dict | None
+) -> Discovery | None:
+    """Find a brand's official domain from Play listings and a Google search result.
+
+    Accepted, strongest first:
+      1. a Google candidate (knowledge panel website, or a top result about the
+         brand) that matches the developer site of the brand's Play app;
+      2. Google's knowledge panel website alone (flagged for review);
+      3. the developer site of a brand app with >= 1M installs alone (review).
+    Returns None when none applies: an unproven domain is worse than none,
+    because the veto would trust it.
+    """
+    today = datetime.now(tz=UTC).date().isoformat()
+
+    play_sites: list[tuple[str, int, str, bool]] = []  # (host, installs, app_id, full-name match)
+    for item in listings:
+        title, developer = str(item.get("title") or ""), str(item.get("developer") or "")
+        if not (mentions_brand(title, brand) or mentions_brand(developer, brand)):
+            continue
+        full = mentions_brand(title, brand, full_name=True) or mentions_brand(
+            developer, brand, full_name=True)
+        website, email = str(item.get("developerWebsite") or ""), item.get("developerEmail")
+        for raw in (website, _email_domain(email)):
+            host = normalize_domain(raw) if raw else ""
+            if _is_brand_site(host):
+                play_sites.append((host, _installs(item), item["appId"], full))
+
+    google: list[tuple[str, str]] = []  # (host, where it came from)
+    if web_result:
+        panel = web_result.get("knowledgeGraph") or {}
+        site = normalize_domain(str(panel.get("website") or ""))
+        if _is_brand_site(site):
+            google.append((site, "Google knowledge panel"))
+        for rank, hit in enumerate((web_result.get("organic") or [])[:5], start=1):
+            host = normalize_domain(str(hit.get("link") or ""))
+            if _is_brand_site(host) and (mentions_brand(host, brand)
+                                         or mentions_brand(str(hit.get("title") or ""), brand)):
+                google.append((host, f"Google result #{rank}"))
+
+    for g_host, g_where in google:
+        for p_host, installs, app_id, _full in play_sites:
+            if _same_site(g_host, p_host):
+                domain = min(g_host, p_host, key=len)
+                return Discovery(
+                    domains=[domain], method="google+play", checked_at=today,
+                    evidence=[f"{g_where}: {g_host}",
+                              f"Play developer site of {app_id} ({installs:,} installs): {p_host}"],
+                )
+
+    panel_hits = [(h, w) for h, w in google if w == "Google knowledge panel"]
+    if panel_hits:
+        host, where = panel_hits[0]
+        return Discovery(domains=[host], method="google_knowledge_panel", review=True,
+                         checked_at=today, evidence=[f"{where}: {host} (not confirmed on Play)"])
+
+    popular = sorted(
+        (s for s in play_sites if s[3] and s[1] >= PLAY_ONLY_MIN_INSTALLS), key=lambda s: -s[1]
+    )
+    if popular:
+        host, installs, app_id, _full = popular[0]
+        return Discovery(
+            domains=[host], method="play_popular_app", review=True, checked_at=today,
+            evidence=[(f"Play developer site of {app_id} ({installs:,} installs): {host} "
+                       "(not confirmed by Google)")],
+        )
+    return None
 
 
 @dataclass
@@ -411,12 +632,8 @@ class Enrichment:
         )
 
 
-def _email_domain(email: object) -> str:
-    return email.split("@")[-1].strip().lower() if isinstance(email, str) and "@" in email else ""
-
-
-def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -> Enrichment:
-    """Find the brand's official Play apps, accepting only domain-verified publishers.
+def enrich_from_listings(entry: BrandEntry, listings: list[dict]) -> Enrichment:
+    """Pick the brand's official Play apps, accepting only domain-verified publishers.
 
     A publisher is accepted when its developer website or e-mail is under an
     official domain. Every app by an accepted publisher in the results is then
@@ -427,17 +644,6 @@ def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -
         domains=list(entry.official_domains),
         checked_at=datetime.now(tz=UTC).date().isoformat(),
     )
-    listings: list[dict] = []
-    for hit in client.search(entry.brand_name, hits):
-        app_id = str(hit.get("appId") or "").strip()
-        if not app_id:
-            continue
-        try:
-            detail = client.details(app_id) or {}
-        except Exception:  # noqa: BLE001 - one failed detail must not lose the brand
-            detail = {}
-        listings.append({**hit, **detail, "appId": app_id})
-
     verified: dict[str, str] = {}
     for item in listings:
         publisher = str(item.get("developer") or "").strip()
@@ -450,7 +656,6 @@ def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -
         elif email_dom and host_under(email_dom, entry.official_domains):
             verified[publisher] = f"developer e-mail domain {email_dom}"
 
-    brand_key = slugify(entry.brand_name).split("_")[0]
     for item in listings:
         publisher = str(item.get("developer") or "").strip()
         app_id = item["appId"]
@@ -460,7 +665,7 @@ def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -
             if title:
                 result.apps.append(title)
             result.evidence.append(f"{app_id}: {publisher!r} verified by {verified[publisher]}")
-        elif publisher and brand_key and brand_key in slugify(publisher):
+        elif publisher and mentions_brand(publisher, entry.brand_name):
             result.needs_review.append(
                 f"{app_id}: publisher {publisher!r} resembles the brand but has no "
                 "website/e-mail under an official domain"
@@ -471,6 +676,31 @@ def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -
     result.apps = _dedupe(result.apps)
     result.needs_review = _dedupe(result.needs_review)
     return result
+
+
+def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -> Enrichment:
+    """Search Play for the brand and enrich from the results."""
+    return enrich_from_listings(entry, fetch_play_listings(entry.brand_name, client, hits=hits))
+
+
+class OnlineResolver:
+    """Domain discovery and enrichment sharing one Play search per brand."""
+
+    def __init__(self, play: PlayClient, web: WebSearchClient | None, *, hits: int = 15) -> None:
+        self.play, self.web, self.hits = play, web, hits
+        self._listings: dict[str, list[dict]] = {}
+
+    def listings(self, brand: str) -> list[dict]:
+        if brand not in self._listings:
+            self._listings[brand] = fetch_play_listings(brand, self.play, hits=self.hits)
+        return self._listings[brand]
+
+    def discover(self, entry: BrandEntry) -> Discovery | None:
+        web_result = self.web.lookup(entry.brand_name) if self.web is not None else None
+        return discover_domain(entry.brand_name, self.listings(entry.brand_name), web_result)
+
+    def enrich(self, entry: BrandEntry) -> Enrichment:
+        return enrich_from_listings(entry, self.listings(entry.brand_name))
 
 
 # ---------------------------------------------------------------------------
@@ -484,6 +714,7 @@ class Action(str, Enum):
     REMOVE = "remove"
     SKIP_MANUAL = "skip-manual"
     SKIP_COVERED = "skip-covered"
+    SKIP_UNRESOLVED = "skip-no-domain"
 
 
 @dataclass
@@ -512,7 +743,12 @@ def is_managed(data: dict) -> bool:
     return isinstance(block, dict) and block.get("managed_by") == MANAGER
 
 
-def build_profile(entry: BrandEntry, enrichment: Enrichment | None, source: str) -> dict:
+def build_profile(
+    entry: BrandEntry,
+    enrichment: Enrichment | None,
+    source: str,
+    discovery: Discovery | None = None,
+) -> dict:
     """Assemble the profile dict. CSV values come first, enrichment only adds."""
     enr = enrichment or Enrichment(domains=[])
     profile = {
@@ -527,6 +763,8 @@ def build_profile(entry: BrandEntry, enrichment: Enrichment | None, source: str)
     }
     BrandProfile(**profile)  # the hunt must be able to load what we write
     block: dict = {"managed_by": MANAGER, "source": source}
+    if discovery is not None:
+        block["discovery"] = discovery.to_json()
     if enrichment is not None:
         block["enrichment"] = enrichment.to_json()
     profile[MANAGED_KEY] = block
@@ -550,11 +788,52 @@ def _read_profiles(directory: Path, warnings: list[str]) -> dict[Path, dict]:
     return found
 
 
+class _Online:
+    """Rate limiting, progress and a circuit breaker shared by all online calls."""
+
+    def __init__(self, delay: float, max_failures: int,
+                 progress: Callable[[BrandEntry], None] | None, report: SyncReport) -> None:
+        self.delay, self.max_failures = delay, max_failures
+        self.progress, self.report = progress, report
+        self.failures = 0
+        self.down = False
+        self._last_brand: str | None = None
+
+    def call(
+        self, what: str, entry: BrandEntry, fn: Callable[[BrandEntry], object]
+    ) -> tuple[bool, object]:
+        """Run fn(entry). Returns (ok, result); never raises."""
+        if self.down:
+            return False, None
+        if self._last_brand != entry.id:
+            if self._last_brand is not None and self.delay:
+                time.sleep(self.delay)
+            self._last_brand = entry.id
+            if self.progress is not None:
+                self.progress(entry)
+        try:
+            result = fn(entry)
+        except Exception as exc:  # noqa: BLE001 - one brand failing must not stop the sync
+            self.failures += 1
+            self.report.warnings.append(f"{entry.brand_name}: {what} failed ({type(exc).__name__})")
+            if self.failures >= self.max_failures:
+                self.down = True
+                self.report.warnings.append(
+                    f"online lookup stopped after {self.failures} consecutive failures "
+                    "(unreachable or rate-limited?); remaining brands use the CSV and cache only. "
+                    "Re-run later: brands already looked up are not queried again."
+                )
+            return False, None
+        self.failures = 0
+        return True, result
+
+
 def plan_sync(
     registry: Registry,
     watchlist: Path,
     *,
     enricher: Callable[[BrandEntry], Enrichment] | None = None,
+    discoverer: Callable[[BrandEntry], Discovery | None] | None = None,
     refresh: bool = False,
     prune: bool = True,
     delay: float = 0.0,
@@ -563,11 +842,11 @@ def plan_sync(
 ) -> SyncReport:
     """Work out every file change without writing anything.
 
-    Enrichment is incremental: a brand already enriched against its current
-    official domains is not queried again unless ``refresh`` is set, so a sweep
-    over a large CSV only pays for new or changed brands. After
-    ``max_failures`` consecutive enrichment failures the source is treated as
-    down for the rest of the run.
+    Online work is incremental: a brand whose domain was already discovered, or
+    that was already enriched against its current official domains, is not
+    queried again unless ``refresh`` is set, so a sweep over a large CSV only
+    pays for new or changed brands. After ``max_failures`` consecutive online
+    failures the sources are treated as down for the rest of the run.
     """
     report = SyncReport(errors=list(registry.errors), warnings=list(registry.warnings))
     if not registry.ok:
@@ -580,10 +859,10 @@ def plan_sync(
         for d in data.get("official_domains") or []:
             manual_domains.setdefault(normalize_domain(str(d)), path)
 
+    online = _Online(delay, max_failures, progress, report)
     keep: set[Path] = set()
-    first_call = True
-    failures = 0
-    for entry in registry.active:
+    for row in registry.active:
+        entry = row  # replaced below by a copy carrying the discovered domains
         path = watchlist / f"{entry.id}.json"
         if path in manual:
             report.changes.append(Change(
@@ -591,6 +870,42 @@ def plan_sync(
                 "hand-maintained profile with this id exists; it takes priority",
             ))
             continue
+
+        current = existing.get(path)
+        block = (current or {}).get(MANAGED_KEY, {})
+
+        # 1. Official domains: the CSV wins; otherwise the cached or a new discovery.
+        discovery: Discovery | None = None
+        if not entry.official_domains:
+            if block.get("discovery") and not refresh:
+                discovery = Discovery.from_json(block["discovery"])
+            elif discoverer is not None:
+                ok, found = online.call("domain discovery", entry, discoverer)
+                if ok and found is None:
+                    report.warnings.append(
+                        f"{entry.brand_name}: no official domain could be proven online"
+                    )
+                discovery = found if ok else (
+                    Discovery.from_json(block["discovery"]) if block.get("discovery") else None
+                )
+            if discovery is None:
+                hint = ("add official_domains to its CSV row" if discoverer is not None
+                        else "run 'sync --enrich' or add official_domains to its CSV row")
+                report.changes.append(Change(
+                    Action.SKIP_UNRESOLVED, path, entry.brand_name, f"no official domain; {hint}",
+                ))
+                if current is not None:
+                    keep.add(path)  # keep a previously resolved profile rather than drop coverage
+                continue
+            entry = replace(entry, official_domains=tuple(discovery.domains))
+            fresh = discovery.to_json() != block.get("discovery")
+            if discovery.review and fresh:  # remind once, when first found
+                proof = "; ".join(discovery.evidence)
+                report.review.append(
+                    f"{entry.brand_name}: domain {', '.join(discovery.domains)} from "
+                    f"{discovery.method}; confirm it or put it in the CSV ({proof})"
+                )
+
         covered = next(
             (manual_domains[d] for d in entry.official_domains if d in manual_domains), None
         )
@@ -601,46 +916,29 @@ def plan_sync(
             ))
             continue
 
-        current = existing.get(path)
+        # 2. Enrichment against those domains, cached until the domains change.
         enrichment = None
-        if current is not None:
-            old = current.get(MANAGED_KEY, {}).get("enrichment")
-            if old:
-                enrichment = Enrichment.from_json(old)
-                if enrichment.domains != list(entry.official_domains):
-                    enrichment = None  # official domains changed: proof is stale
-                    report.warnings.append(
-                        f"{entry.brand_name}: official domains changed, previous enrichment dropped"
-                    )
+        if block.get("enrichment"):
+            enrichment = Enrichment.from_json(block["enrichment"])
+            if enrichment.domains != list(entry.official_domains):
+                enrichment = None  # official domains changed: the old proof is stale
+                report.warnings.append(
+                    f"{entry.brand_name}: official domains changed, previous enrichment dropped"
+                )
         if enricher is not None and (enrichment is None or refresh):
-            if delay and not first_call:
-                time.sleep(delay)
-            first_call = False
-            if progress is not None:
-                progress(entry)
-            try:
-                enrichment = enricher(entry)
-                failures = 0
-                report.review.extend(f"{entry.brand_name}: {r}" for r in enrichment.needs_review)
-                if not enrichment.publishers:
+            ok, fresh = online.call("enrichment", entry, enricher)
+            if ok:
+                enrichment = fresh
+                report.review.extend(f"{entry.brand_name}: {r}" for r in fresh.needs_review)
+                if not fresh.publishers:
                     report.warnings.append(
                         f"{entry.brand_name}: Play enrichment found no domain-verified publisher"
                     )
-            except Exception as exc:  # noqa: BLE001 - one brand failing must not stop the sync
-                failures += 1
+            elif not online.down:
                 kept = "previous enrichment kept" if enrichment else "profile written from CSV only"
-                report.warnings.append(
-                    f"{entry.brand_name}: enrichment failed ({type(exc).__name__}); {kept}"
-                )
-                if failures >= max_failures:
-                    enricher = None  # source is down: stop hammering it, finish from the CSV
-                    report.warnings.append(
-                        f"enrichment stopped after {failures} consecutive failures "
-                        "(Play unreachable or rate-limited?); remaining brands use the CSV only. "
-                        "Re-run later; already enriched brands are not queried again."
-                    )
+                report.warnings[-1] += f"; {kept}"
 
-        content = _dump(build_profile(entry, enrichment, registry.source))
+        content = _dump(build_profile(entry, enrichment, registry.source, discovery))
         keep.add(path)
         if current is None:
             report.changes.append(Change(Action.CREATE, path, entry.brand_name, content=content))
@@ -689,7 +987,8 @@ def apply_sync(report: SyncReport, watchlist: Path) -> None:
 
 _SYMBOL = {
     Action.CREATE: "+", Action.UPDATE: "~", Action.REMOVE: "-",
-    Action.SKIP_MANUAL: "!", Action.SKIP_COVERED: "!", Action.UNCHANGED: "=",
+    Action.SKIP_MANUAL: "!", Action.SKIP_COVERED: "!", Action.SKIP_UNRESOLVED: "?",
+    Action.UNCHANGED: "=",
 }
 
 
@@ -702,7 +1001,7 @@ def _print_report(report: SyncReport, *, dry_run: bool, verbose: bool) -> None:
         if c.action is Action.UNCHANGED and not verbose:
             continue
         note = f"  ({c.reason})" if c.reason else ""
-        print(f"  {_SYMBOL[c.action]} {c.action.value:<13}{c.path.name:<34}{c.brand}{note}")
+        print(f"  {_SYMBOL[c.action]} {c.action.value:<15}{c.path.name:<34}{c.brand}{note}")
     for r in report.review:
         print(f"review  {r}")
 
@@ -733,12 +1032,13 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--no-prune", action="store_true",
                        help="never remove generated profiles missing from the CSV")
         p.add_argument("--enrich", action="store_true",
-                       help="fill official publishers/apps from Google Play (domain-verified)")
+                       help="look up missing official domains (Google + Play) and fill "
+                            "official publishers/apps from Play (domain-verified)")
         p.add_argument("--refresh", action="store_true",
-                       help="with --enrich, re-query brands that were already enriched")
+                       help="with --enrich, look up again brands already resolved")
         p.add_argument("--hits", type=int, default=15, help="Play results per brand for --enrich")
         p.add_argument("--delay", type=float, default=2.0,
-                       help="seconds between Play lookups (rate-limit courtesy)")
+                       help="seconds between brands during --enrich (rate-limit courtesy)")
         p.add_argument("--only", default=None,
                        help="comma-separated ids to process (others are left as they are)")
         p.add_argument("-v", "--verbose", action="store_true", help="also list unchanged profiles")
@@ -757,21 +1057,28 @@ def main(argv: list[str] | None = None) -> int:
         registry.entries = [e for e in registry.entries if e.id in wanted]
         prune = False  # a partial run must not remove the brands it skipped
 
-    enricher = None
-    progress = None
+    enricher = discoverer = progress = None
     if args.enrich:
-        client = GooglePlayClient()
-        enricher = lambda entry: enrich_from_play(entry, client, hits=args.hits)
+        web: WebSearchClient | None
+        try:
+            web = SerperWebClient()
+        except RuntimeError:
+            web = None
+            print("warning SERPER_API_KEY not set: domains are discovered from Google Play only "
+                  f"(apps with {PLAY_ONLY_MIN_INSTALLS:,}+ installs), each flagged for review",
+                  file=sys.stderr)
+        resolver = OnlineResolver(GooglePlayClient(), web, hits=args.hits)
+        enricher, discoverer = resolver.enrich, resolver.discover
         total = len(registry.active)
         position = {e.id: i for i, e in enumerate(registry.active, start=1)}
 
         def progress(entry: BrandEntry) -> None:
-            print(f"  enriching {position[entry.id]}/{total} {entry.brand_name} ...",
+            print(f"  looking up {position[entry.id]}/{total} {entry.brand_name} ...",
                   file=sys.stderr, flush=True)
 
     dry_run = args.command == "check"
     report = plan_sync(
-        registry, args.watchlist, enricher=enricher, refresh=args.refresh,
+        registry, args.watchlist, enricher=enricher, discoverer=discoverer, refresh=args.refresh,
         prune=prune, delay=args.delay if args.enrich else 0.0, progress=progress,
     )
     if not dry_run:
