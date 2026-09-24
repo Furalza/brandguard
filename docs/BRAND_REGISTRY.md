@@ -70,7 +70,7 @@ and one Google Play search. Accepted, strongest first:
 
 | Method | When | Review note |
 |---|---|---|
-| `google+play` | Google's knowledge panel or a top result about the brand matches the developer site of the brand's Play app | no |
+| `google+play` | Google's knowledge panel matches the developer site of the brand's Play app, or a top result about the brand does and that Play app has 100k+ installs | no |
 | `google_knowledge_panel` | only Google's knowledge panel has a website | yes |
 | `play_popular_app` | only Play: developer site of an app with 1M+ installs that carries the full brand name | yes |
 
@@ -84,11 +84,20 @@ only the Play rule is available.
 
 ## Enrichment
 
-`--enrich` searches Google Play for the brand and accepts a publisher only when
-its developer website or e-mail is under one of the brand's official domains.
-Apps from an accepted publisher become official package ids and titles. A
-publisher that merely resembles the brand by name is listed under `review` and
-never written: the name is attacker-controlled, the domain is not (K-014).
+`--enrich` searches Google Play for the brand. A publisher is accepted only when
+both hold:
+
+1. its developer website or e-mail is under one of the brand's official domains, and
+2. one of its apps in the results has at least 100,000 installs (`--min-installs`).
+
+Play's website and e-mail fields are typed in by the developer, so the first
+condition is only a claim; an impersonator can copy it. Organic install volume
+is what an impersonator cannot produce, so the claim counts only with it
+(K-055). All apps of an accepted publisher then become official package ids and
+titles, including its small ones. A publisher that claims the domain without an
+established app, or merely resembles the brand by name, is listed under
+`review` with the reason and never written. If it is genuine, type it into
+`official_publishers` in the CSV.
 
 Discovery and enrichment share one Play search per brand and are cached in the
 profile. A brand is queried again only with `--refresh`, when its official

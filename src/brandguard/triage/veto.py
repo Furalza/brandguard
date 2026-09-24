@@ -10,9 +10,10 @@ An official veto requires two independent conditions:
 
 1. The publisher name matches the official list (normalized, so a store's
    Turkish flattening still matches).
-2. At least one verifier the attacker cannot cheaply forge is present: a website
-   under an official domain, a store ``verified`` flag, or an account age
-   consistent with an established brand.
+2. At least one verifier the attacker cannot cheaply forge is present: a store
+   ``verified`` flag, an account age consistent with an established brand, or a
+   website under an official domain backed by organic reach (see K-055: the
+   website field is self-declared, so on its own it is only a claim).
 
 Name match alone does not fire the veto. When the name matches but no verifier is
 present, the record is not vetoed; it falls through to scoring as a high-risk
@@ -34,6 +35,12 @@ from brandguard.triage.signals import Direction, SignalResult
 # would have had to register and wait years, which does not fit the phishing
 # economics in the threat model.
 _ESTABLISHED_ACCOUNT_MAX_YEAR = 2020
+
+# A claimed developer website counts only on a listing with this many installs
+# (organic reach an impersonator cannot produce), or on an official package id
+# where the store guarantees package ids are unique.
+_ESTABLISHED_DOWNLOADS = 100_000
+_UNIQUE_PACKAGE_ID_SOURCES = ("google_play",)  # google_play, google_play_live
 
 # Unauthorized-build markers. A real app carries none of these in its NAME or
 # PACKAGE id; a redistributed, modified build advertises them ("Spotify Premium
@@ -62,6 +69,30 @@ def _domain_matches_official(website: str | None, profile: BrandProfile) -> bool
     return any(host == d.lower() or host.endswith("." + d.lower()) for d in profile.official_domains)
 
 
+def _website_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
+    """Accept a website on an official domain only when the listing backs the claim.
+
+    A store's developer website is typed in by the developer, so on its own it
+    is a claim an impersonator can copy together with the official name (K-055).
+    It identifies the publisher when the listing also shows what an
+    impersonator cannot produce: organic install volume, or an official package
+    id on a store that enforces unique package ids. A source that reports no
+    install figure keeps the earlier rule, since there is nothing to check the
+    claim against; live Play always reports one.
+    """
+    if not _domain_matches_official(record.publisher.website, profile):
+        return None
+    base = "publisher website on an official domain"
+    if record.downloads is None:
+        return base
+    if record.downloads >= _ESTABLISHED_DOWNLOADS:
+        return f"{base}, with {record.downloads:,}+ installs"
+    unique_ids = record.source.startswith(_UNIQUE_PACKAGE_ID_SOURCES)
+    if unique_ids and record.app_id in set(profile.official_package_ids):
+        return f"{base}, on an official package id ({record.source} package ids are unique)"
+    return None
+
+
 def _identity_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
     """Return the name of a verifier that supports official identity, or None.
 
@@ -69,8 +100,9 @@ def _identity_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
     """
     if record.publisher.verified is True:
         return "store-verified publisher"
-    if _domain_matches_official(record.publisher.website, profile):
-        return "publisher website on an official domain"
+    website = _website_verifier(record, profile)
+    if website is not None:
+        return website
     created = record.publisher.account_created
     if created is not None and created <= date(_ESTABLISHED_ACCOUNT_MAX_YEAR, 1, 1):
         return f"publisher account predates {_ESTABLISHED_ACCOUNT_MAX_YEAR}"

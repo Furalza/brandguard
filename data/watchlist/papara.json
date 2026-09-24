@@ -50,8 +50,8 @@
         "Papara CepPOS"
       ],
       "evidence": [
-        "com.papara.merchant: 'PAPARA' verified by developer website papara.com",
-        "com.provisionpay.softpos.papara: 'PAPARA' verified by developer website papara.com"
+        "com.papara.merchant: 'PAPARA' via developer website papara.com, established by com.papara.merchant (202,756 installs)",
+        "com.provisionpay.softpos.papara: 'PAPARA' via developer website papara.com, established by com.papara.merchant (202,756 installs)"
       ]
     }
   }

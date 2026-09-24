@@ -54,9 +54,9 @@
         "Dolap - İkinci El Alışveriş"
       ],
       "evidence": [
-        "com.trendyol.milla.android: 'Trendyol' verified by developer e-mail domain trendyol.com",
-        "com.trendyol.sellercenter: 'Trendyol' verified by developer e-mail domain trendyol.com",
-        "com.dolap.android: 'Trendyol' verified by developer e-mail domain trendyol.com"
+        "com.trendyol.milla.android: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)",
+        "com.trendyol.sellercenter: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)",
+        "com.dolap.android: 'Trendyol' via developer e-mail domain trendyol.com, established by com.dolap.android (34,331,405 installs)"
       ]
     }
   }

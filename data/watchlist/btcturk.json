@@ -3,16 +3,10 @@
   "official_domains": [
     "btcturk.com"
   ],
-  "official_publishers": [
-    "BtcTurk Global Inc."
-  ],
-  "known_official_apps": [
-    "BtcTurk | Global: Buy BTC&USDT"
-  ],
+  "official_publishers": [],
+  "known_official_apps": [],
   "sector": "crypto",
-  "official_package_ids": [
-    "com.btcturk.global"
-  ],
+  "official_package_ids": [],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -24,18 +18,10 @@
       "domains": [
         "btcturk.com"
       ],
-      "publishers": [
-        "BtcTurk Global Inc."
-      ],
-      "package_ids": [
-        "com.btcturk.global"
-      ],
-      "apps": [
-        "BtcTurk | Global: Buy BTC&USDT"
-      ],
-      "evidence": [
-        "com.btcturk.global: 'BtcTurk Global Inc.' verified by developer website global.btcturk.com"
-      ]
+      "publishers": [],
+      "package_ids": [],
+      "apps": [],
+      "evidence": []
     }
   }
 }

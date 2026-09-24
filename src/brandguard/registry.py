@@ -385,6 +385,10 @@ _NOT_A_BRAND_SITE = (
 # produce (THREAT_MODEL.md, "Cannot do").
 PLAY_ONLY_MIN_INSTALLS = 1_000_000
 
+# Play's developer website and e-mail are self-declared. They count as proof of
+# identity only together with an app this established, for the same reason.
+ESTABLISHED_MIN_INSTALLS = 100_000
+
 
 def _brand_keys(brand: str) -> tuple[str, list[str]]:
     slug = slugify(brand)
@@ -531,13 +535,18 @@ class Discovery:
 
 
 def discover_domain(
-    brand: str, listings: list[dict], web_result: dict | None
+    brand: str,
+    listings: list[dict],
+    web_result: dict | None,
+    *,
+    min_installs: int = ESTABLISHED_MIN_INSTALLS,
 ) -> Discovery | None:
     """Find a brand's official domain from Play listings and a Google search result.
 
     Accepted, strongest first:
-      1. a Google candidate (knowledge panel website, or a top result about the
-         brand) that matches the developer site of the brand's Play app;
+      1. a Google candidate that matches the developer site of the brand's Play
+         app: the knowledge panel website, or a top result about the brand when
+         that Play app is established (``min_installs``);
       2. Google's knowledge panel website alone (flagged for review);
       3. the developer site of a brand app with >= 1M installs alone (review).
     Returns None when none applies: an unproven domain is worse than none,
@@ -572,6 +581,12 @@ def discover_domain(
 
     for g_host, g_where in google:
         for p_host, installs, app_id, _full in play_sites:
+            # A web result can be ranked and a Play site typed in by the same
+            # attacker; the knowledge panel cannot. Organic agreement therefore
+            # needs the Play side to be an established app.
+            organic = g_where != "Google knowledge panel"
+            if organic and installs < min_installs:
+                continue
             if _same_site(g_host, p_host):
                 domain = min(g_host, p_host, key=len)
                 return Discovery(
@@ -632,62 +647,104 @@ class Enrichment:
         )
 
 
-def enrich_from_listings(entry: BrandEntry, listings: list[dict]) -> Enrichment:
-    """Pick the brand's official Play apps, accepting only domain-verified publishers.
+def enrich_from_listings(
+    entry: BrandEntry,
+    listings: list[dict],
+    *,
+    min_installs: int = ESTABLISHED_MIN_INSTALLS,
+) -> Enrichment:
+    """Pick the brand's official Play apps from search listings.
 
-    A publisher is accepted when its developer website or e-mail is under an
-    official domain. Every app by an accepted publisher in the results is then
-    official. Publishers that only resemble the brand by name are returned in
-    needs_review and are not written into the profile.
+    Play's developer website and e-mail are typed in by the developer, so a
+    domain under an official domain is only a claim: an impersonator can type
+    the brand's domain too. A publisher is accepted only when that claim is
+    backed by what an impersonator cannot produce, organic install volume: at
+    least one of its apps in the results has ``min_installs`` or more. Every app
+    of an accepted publisher is then official, however small (a new product of
+    an established publisher). Claims without an established app, and
+    publishers that only resemble the brand by name, go to needs_review and are
+    never written into the profile.
     """
     result = Enrichment(
         domains=list(entry.official_domains),
         checked_at=datetime.now(tz=UTC).date().isoformat(),
     )
-    verified: dict[str, str] = {}
+    claims: dict[str, str] = {}
+    reach: dict[str, tuple[int, str]] = {}  # publisher -> (max installs, app id)
     for item in listings:
         publisher = str(item.get("developer") or "").strip()
-        if not publisher or publisher in verified:
+        if not publisher:
+            continue
+        installs = _installs(item)
+        if installs > reach.get(publisher, (-1, ""))[0]:
+            reach[publisher] = (installs, item["appId"])
+        if publisher in claims:
             continue
         website = str(item.get("developerWebsite") or "")
         email_dom = _email_domain(item.get("developerEmail"))
         if website and host_under(website, entry.official_domains):
-            verified[publisher] = f"developer website {normalize_domain(website)}"
+            claims[publisher] = f"developer website {normalize_domain(website)}"
         elif email_dom and host_under(email_dom, entry.official_domains):
-            verified[publisher] = f"developer e-mail domain {email_dom}"
+            claims[publisher] = f"developer e-mail domain {email_dom}"
+
+    accepted: dict[str, str] = {}
+    for publisher, claim in claims.items():
+        installs, top_app = reach[publisher]
+        if installs >= min_installs:
+            accepted[publisher] = f"{claim}, established by {top_app} ({installs:,} installs)"
+        else:
+            result.needs_review.append(
+                f"publisher {publisher!r} claims {claim} but none of its apps has "
+                f"{min_installs:,}+ installs (largest: {top_app}, {installs:,}); a claimed "
+                "domain alone is not proof. Add it to official_publishers if it is genuine"
+            )
 
     for item in listings:
         publisher = str(item.get("developer") or "").strip()
         app_id = item["appId"]
         title = str(item.get("title") or "").strip()
-        if publisher in verified:
+        if publisher in accepted:
             result.package_ids.append(app_id)
             if title:
                 result.apps.append(title)
-            result.evidence.append(f"{app_id}: {publisher!r} verified by {verified[publisher]}")
-        elif publisher and mentions_brand(publisher, entry.brand_name):
+            result.evidence.append(f"{app_id}: {publisher!r} via {accepted[publisher]}")
+        elif publisher and publisher not in claims and mentions_brand(publisher, entry.brand_name):
             result.needs_review.append(
                 f"{app_id}: publisher {publisher!r} resembles the brand but has no "
                 "website/e-mail under an official domain"
             )
 
-    result.publishers = list(verified)
+    result.publishers = list(accepted)
     result.package_ids = _dedupe(result.package_ids)
     result.apps = _dedupe(result.apps)
     result.needs_review = _dedupe(result.needs_review)
     return result
 
 
-def enrich_from_play(entry: BrandEntry, client: PlayClient, *, hits: int = 15) -> Enrichment:
+def enrich_from_play(
+    entry: BrandEntry,
+    client: PlayClient,
+    *,
+    hits: int = 15,
+    min_installs: int = ESTABLISHED_MIN_INSTALLS,
+) -> Enrichment:
     """Search Play for the brand and enrich from the results."""
-    return enrich_from_listings(entry, fetch_play_listings(entry.brand_name, client, hits=hits))
+    listings = fetch_play_listings(entry.brand_name, client, hits=hits)
+    return enrich_from_listings(entry, listings, min_installs=min_installs)
 
 
 class OnlineResolver:
     """Domain discovery and enrichment sharing one Play search per brand."""
 
-    def __init__(self, play: PlayClient, web: WebSearchClient | None, *, hits: int = 15) -> None:
-        self.play, self.web, self.hits = play, web, hits
+    def __init__(
+        self,
+        play: PlayClient,
+        web: WebSearchClient | None,
+        *,
+        hits: int = 15,
+        min_installs: int = ESTABLISHED_MIN_INSTALLS,
+    ) -> None:
+        self.play, self.web, self.hits, self.min_installs = play, web, hits, min_installs
         self._listings: dict[str, list[dict]] = {}
 
     def listings(self, brand: str) -> list[dict]:
@@ -697,10 +754,12 @@ class OnlineResolver:
 
     def discover(self, entry: BrandEntry) -> Discovery | None:
         web_result = self.web.lookup(entry.brand_name) if self.web is not None else None
-        return discover_domain(entry.brand_name, self.listings(entry.brand_name), web_result)
+        return discover_domain(entry.brand_name, self.listings(entry.brand_name), web_result,
+                               min_installs=self.min_installs)
 
     def enrich(self, entry: BrandEntry) -> Enrichment:
-        return enrich_from_listings(entry, self.listings(entry.brand_name))
+        return enrich_from_listings(entry, self.listings(entry.brand_name),
+                                    min_installs=self.min_installs)
 
 
 # ---------------------------------------------------------------------------
@@ -1037,6 +1096,9 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--refresh", action="store_true",
                        help="with --enrich, look up again brands already resolved")
         p.add_argument("--hits", type=int, default=15, help="Play results per brand for --enrich")
+        p.add_argument("--min-installs", type=int, default=ESTABLISHED_MIN_INSTALLS,
+                       help="installs a publisher's largest app needs before its claimed "
+                            "domain is trusted (default: %(default)s)")
         p.add_argument("--delay", type=float, default=2.0,
                        help="seconds between brands during --enrich (rate-limit courtesy)")
         p.add_argument("--only", default=None,
@@ -1067,7 +1129,8 @@ def main(argv: list[str] | None = None) -> int:
             print("warning SERPER_API_KEY not set: domains are discovered from Google Play only "
                   f"(apps with {PLAY_ONLY_MIN_INSTALLS:,}+ installs), each flagged for review",
                   file=sys.stderr)
-        resolver = OnlineResolver(GooglePlayClient(), web, hits=args.hits)
+        resolver = OnlineResolver(GooglePlayClient(), web, hits=args.hits,
+                                  min_installs=args.min_installs)
         enricher, discoverer = resolver.enrich, resolver.discover
         total = len(registry.active)
         position = {e.id: i for i, e in enumerate(registry.active, start=1)}

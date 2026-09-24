@@ -228,13 +228,16 @@ class FakePlay:
 
 ZIRAAT_PLAY = [
     {"appId": "com.ziraat.ziraatmobil", "title": "Ziraat Mobil",
-     "developer": "T.C. Ziraat Bankas\u0131 A.\u015e.", "developerWebsite": "https://www.ziraatbank.com.tr"},
+     "developer": "T.C. Ziraat Bankas\u0131 A.\u015e.", "developerWebsite": "https://www.ziraatbank.com.tr",
+     "realInstalls": 10_000_000},
     {"appId": "com.bankkart.mobil", "title": "Bankkart Mobil",
-     "developer": "T.C. Ziraat Bankas\u0131 A.\u015e.", "developerWebsite": None},
+     "developer": "T.C. Ziraat Bankas\u0131 A.\u015e.", "developerWebsite": None,
+     "realInstalls": 40_000},
     {"appId": "com.ziraat.fake", "title": "Ziraat Giris",
      "developer": "Ziraat Bank Destek", "developerWebsite": "https://ziraat-destek.xyz"},
     {"appId": "com.ziraatkatilim.mobil", "title": "Ziraat Kat\u0131l\u0131m",
-     "developer": "Ziraat Katilim", "developerEmail": "mobil@ziraatkatilim.com.tr"},
+     "developer": "Ziraat Katilim", "developerEmail": "mobil@ziraatkatilim.com.tr",
+     "realInstalls": 1_000_000},
     {"appId": "com.other.game", "title": "Tarla Oyunu",
      "developer": "Oyun Stud", "developerWebsite": "https://oyun.example.com"},
 ]
@@ -507,3 +510,62 @@ def test_play_only_rule_needs_the_full_brand_name():
     calculator = [{"appId": "com.kredi.hesap", "title": "Kredi Hesaplama", "developer": "Hesap Ltd",
                    "developerWebsite": "https://kredihesap.example.com", "realInstalls": 5_000_000}]
     assert discover_domain("Yap\u0131 Kredi", calculator, None) is None
+
+
+# --- hardening: a claimed domain is not proof -----------------------------------
+
+IMPOSTOR = {"appId": "com.ziraat.guvenli", "title": "Ziraat Mobil Guvenli Giris",
+            "developer": "Ziraat Dijital Hizmetler",
+            "developerWebsite": "https://www.ziraatbank.com.tr",  # typed in by the attacker
+            "developerEmail": "destek@ziraatbank.com.tr",
+            "realInstalls": 500}
+
+
+def test_impostor_claiming_the_official_domain_is_not_trusted():
+    result = enrich_from_play(_ziraat(), FakePlay([*ZIRAAT_PLAY, IMPOSTOR]))
+    assert "Ziraat Dijital Hizmetler" not in result.publishers
+    assert "com.ziraat.guvenli" not in result.package_ids
+    assert any("Ziraat Dijital Hizmetler" in r and "not proof" in r for r in result.needs_review)
+    # the genuine publisher is still accepted, with the evidence that backs it
+    assert result.publishers == ["T.C. Ziraat Bankas\u0131 A.\u015e."]
+    assert any("10,000,000 installs" in e for e in result.evidence)
+
+
+def test_small_app_of_an_established_publisher_is_official():
+    result = enrich_from_play(_ziraat(), FakePlay(ZIRAAT_PLAY))
+    assert "com.bankkart.mobil" in result.package_ids  # 40k installs, same publisher
+
+
+def test_publisher_without_any_install_data_is_not_trusted():
+    no_data = [{**ZIRAAT_PLAY[0], "realInstalls": None}]
+    result = enrich_from_play(_ziraat(), FakePlay(no_data))
+    assert result.publishers == []
+    assert result.needs_review
+
+
+def test_min_installs_is_tunable():
+    result = enrich_from_play(_ziraat(), FakePlay([IMPOSTOR]), min_installs=100)
+    assert result.publishers == ["Ziraat Dijital Hizmetler"]
+
+
+def test_analyst_can_still_confirm_a_small_publisher_in_the_csv(tmp_path):
+    reg = _reg("ziraat,Ziraat,ziraatbank.com.tr,banking,Ziraat Dijital Hizmetler,yes\n")
+    _sync(reg, tmp_path, enricher=lambda e: enrich_from_play(e, FakePlay([IMPOSTOR])))
+    data = json.loads((tmp_path / "ziraat.json").read_text(encoding="utf-8"))
+    assert data["official_publishers"] == ["Ziraat Dijital Hizmetler"]
+
+
+def test_organic_result_and_small_play_app_do_not_agree_on_a_domain():
+    # attacker ranks a phishing page for the brand and types the same site into Play
+    phish_play = [{"appId": "com.paribu.giris", "title": "Paribu Giris",
+                   "developer": "Paribu Giris", "developerWebsite": "https://paribu-giris.com",
+                   "realInstalls": 300}]
+    phish_web = {"organic": [{"title": "Paribu Giris", "link": "https://paribu-giris.com/"}]}
+    assert discover_domain("Paribu", phish_play, phish_web) is None
+
+
+def test_knowledge_panel_agreement_needs_no_install_threshold():
+    small = [{"appId": "com.paribu.app", "title": "Paribu", "developer": "Paribu",
+              "developerWebsite": "https://paribu.com", "realInstalls": 2_000}]
+    found = discover_domain("Paribu", small, PARIBU_GOOGLE)
+    assert found.domains == ["paribu.com"] and found.method == "google+play"

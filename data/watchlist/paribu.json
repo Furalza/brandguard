@@ -3,18 +3,10 @@
   "official_domains": [
     "paribu.com"
   ],
-  "official_publishers": [
-    "PARİBU"
-  ],
-  "known_official_apps": [
-    "Paribu Pass: Etkinlik ve Bilet",
-    "Paribu Self | Kripto Cüzdan"
-  ],
+  "official_publishers": [],
+  "known_official_apps": [],
   "sector": "crypto",
-  "official_package_ids": [
-    "com.paribu.pass",
-    "com.paribu.self"
-  ],
+  "official_package_ids": [],
   "official_permissions": null,
   "known_affiliates": [],
   "_registry": {
@@ -26,21 +18,10 @@
       "domains": [
         "paribu.com"
       ],
-      "publishers": [
-        "PARİBU"
-      ],
-      "package_ids": [
-        "com.paribu.pass",
-        "com.paribu.self"
-      ],
-      "apps": [
-        "Paribu Pass: Etkinlik ve Bilet",
-        "Paribu Self | Kripto Cüzdan"
-      ],
-      "evidence": [
-        "com.paribu.pass: 'PARİBU' verified by developer website pass.paribu.com",
-        "com.paribu.self: 'PARİBU' verified by developer website pass.paribu.com"
-      ]
+      "publishers": [],
+      "package_ids": [],
+      "apps": [],
+      "evidence": []
     }
   }
 }
