@@ -38,3 +38,9 @@ Thumbs.db
 # summary log and the folder README (see K-033).
 results/*.json
 !results/run_log.csv
+
+# Product database (SQLite) and frontend build
+data/brandguard.db*
+data/t2_cache.sqlite*
+web/node_modules/
+web/dist/

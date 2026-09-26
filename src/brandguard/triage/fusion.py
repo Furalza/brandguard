@@ -179,7 +179,13 @@ def _decide_from_signals(
     label = Label.UNCERTAIN if escalate else _label_for_score(score)
     confidence = _confidence(score, label, escalate)
 
-    conflicts = [s.text for s in signals] if conflict else []
+    # The conflict list travels to T2 as part of the injection-safe case summary,
+    # so it names the signals and their directions, never their evidence text:
+    # the name signal's text quotes the raw app name, which is attacker-written.
+    conflicts = (
+        [f"{s.name}:{s.direction.value}:{s.strength:.2f}" for s in signals]
+        if conflict else []
+    )
     verdict = Verdict(
         app_id=record.app_id,
         source=record.source,

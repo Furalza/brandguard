@@ -203,3 +203,38 @@ def expand(
         add(term, "suffix")
 
     return queries
+
+
+_STRATEGY_PRIORITY = ("exact", "normalized", "suffix", "typosquat", "spacing",
+                      "homoglyph", "leet", "multigraph", "turkish")
+
+
+def select_queries(brand_name: str, limit: int | None, **caps) -> list[Query]:
+    """Pick up to ``limit`` queries with every strategy represented.
+
+    ``expand`` lists strategies in blocks (all homoglyphs, then all Turkish
+    variants, ...), so taking the first N used to spend the whole budget on
+    exact + homoglyph and never reach the suffix variants ("giris", "2026")
+    that real impersonators on Play use most. Round-robin over strategies
+    keeps the budget spread: exact first, then one of each strategy in turn.
+    """
+    queries = expand(brand_name, **caps)
+    if limit is None or limit >= len(queries):
+        return queries
+    by_strategy: dict[str, list[Query]] = {}
+    for q in queries:
+        by_strategy.setdefault(q.strategy, []).append(q)
+    # Priority by how often each trick shows up in real store listings: suffix
+    # and typo variants are what Play actually indexes; homoglyphs mostly matter
+    # for the classifier, not the search box.
+    order = [s for s in _STRATEGY_PRIORITY if s in by_strategy]
+    order += [s for s in by_strategy if s not in order]
+    picked: list[Query] = []
+    while len(picked) < limit and any(by_strategy.values()):
+        for strategy in order:
+            bucket = by_strategy[strategy]
+            if bucket:
+                picked.append(bucket.pop(0))
+                if len(picked) >= limit:
+                    break
+    return picked

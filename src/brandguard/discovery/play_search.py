@@ -89,7 +89,16 @@ def search(query: str, n_hits: int = 30, lang: str = "en", country: str = "us") 
     from google_play_scraper import search as library_search
 
     _install()
-    results = library_search(query, n_hits=n_hits, lang=lang, country=country)
+    try:
+        results = library_search(query, n_hits=n_hits, lang=lang, country=country)
+    except (TypeError, KeyError):
+        # The library reads the featured result from a fixed path and only
+        # guards IndexError; on a "no results" or "did you mean" page the node
+        # is None and it raises TypeError instead (KeyError when the
+        # result dataset is missing altogether, seen for 'Turkiye Is Bankasi A.S.'). A typo variant of a brand
+        # name hits this on most scans. It is an empty result, not a failure:
+        # a real transport or parse failure still propagates (K-030).
+        return []
     seen: set[str] = set()
     unique: list[dict] = []
     for hit in results:

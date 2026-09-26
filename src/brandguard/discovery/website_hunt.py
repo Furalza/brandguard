@@ -14,6 +14,7 @@ module never claims more certainty than its evidence supports. It flags
 
 from __future__ import annotations
 
+import re as _re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol
@@ -100,8 +101,6 @@ def _token_in_label(token: str, label: str) -> bool:
             return True
     return False
 
-
-import re as _re
 
 # A hostname: labels of letters/digits/hyphens separated by dots, with a TLD.
 # Rejects certificate organization strings like "paypal, inc." that crt.sh
@@ -303,14 +302,28 @@ def hunt_websites(
             link = hit.get("link") or ""
             if not link:
                 continue
-            host = urlparse(link).netloc.lower().removeprefix("www.")
-            if host and host not in findings:
-                finding = classify_domain(host, official_domains, brand_name, known_affiliates)
+            host = urlparse(link).netloc.lower().removeprefix("www.").split(":")[0]
+            if not host:
+                continue
+            previous = findings.get(host)
+            if previous is not None and previous.confirmed_live:
+                continue
+            if previous is not None:
+                # A generated variant that a search actually returned is a real,
+                # registered site: promote it from "watch" to live so it gets
+                # D1 enrichment and counts as detected (K-048).
                 findings[host] = DomainFinding(
-                    finding.domain, finding.verdict, finding.similarity,
-                    [*finding.evidence, "Returned by a live web search."],
+                    previous.domain, previous.verdict, previous.similarity,
+                    [*previous.evidence, "Confirmed live: returned by a web search."],
                     source_query=query, confirmed_live=True,
                 )
+                continue
+            finding = classify_domain(host, official_domains, brand_name, known_affiliates)
+            findings[host] = DomainFinding(
+                finding.domain, finding.verdict, finding.similarity,
+                [*finding.evidence, "Returned by a live web search."],
+                source_query=query, confirmed_live=True,
+            )
 
     return list(findings.values())
 

@@ -1,7 +1,7 @@
 """Tests for the live Google Play adapter mapping (no network).
 
 Only the pure mapping is tested; the scraping call is a side effect exercised
-manually with scripts/scrape_and_triage.py.
+manually with scripts/legacy/scrape_and_triage.py.
 """
 
 from brandguard.discovery.live_google_play import _detail_to_record

@@ -217,12 +217,41 @@ def review_consistency_signal(record: AppRecord, profile: BrandProfile) -> Signa
     return None
 
 
+def companion_build_signal(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
+    """Explain a modded companion app the build veto deliberately skipped (K-068).
+
+    Neutral: it neither accuses nor clears. It exists so the analyst reads
+    "modded build of a third-party companion app" instead of wondering why a
+    "(MOD)" listing is merely related.
+    """
+    from brandguard.discovery.normalize import normalize
+    from brandguard.registry import identity_tokens
+    from brandguard.triage.veto import _has_build_marker, companion_marker
+
+    name_norm = normalize(record.name)
+    if not _has_build_marker(name_norm):
+        return None
+    tokens = identity_tokens(profile.brand_name, profile.official_domains)
+    marker = companion_marker(name_norm, tokens)
+    if marker is None or record.app_id in set(profile.official_package_ids):
+        return None
+    return SignalResult(
+        name="companion_build",
+        direction=Direction.NEUTRAL,
+        strength=0.3,
+        text=(f"Modded build of a third-party companion app ('{marker}'), not of the "
+              "brand's own product; the brand is its subject, not its publisher."),
+        meta={"marker": marker},
+    )
+
+
 SCORED_SIGNALS = (
     name_signal,
     account_age_signal,
     solo_publisher_signal,
     permission_signal,
     review_consistency_signal,
+    companion_build_signal,
 )
 
 

@@ -367,7 +367,38 @@ def load_registry(path: Path) -> Registry:
 _GENERIC_TOKENS = frozenset({
     "bank", "banka", "bankasi", "turkiye", "turk", "mobil", "mobile", "app", "kargo",
     "cargo", "holding", "group", "grup", "sirketi", "anonim", "limited", "the",
+    # sector words that name a whole industry, not a company (found live: "kredi"
+    # marked every Turkish loan app an affiliate of Yapi Kredi, "telekom" every
+    # European carrier an affiliate of Turk Telekom)
+    "kredi", "yapi", "finans", "finance", "sigorta", "yatirim", "telekom", "telecom",
+    "market", "magaza", "magazalar", "birlesik", "hizmet", "hizmetleri", "iletisim",
+    "teknoloji", "yazilim", "elektronik", "odeme", "para", "inc", "llc", "gmbh", "ltd",
 })
+
+# Legal suffixes a store shows in a publisher name; not part of the brand.
+_LEGAL_SUFFIX = re.compile(
+    r"[\s,]+(a\.?\s?s\.?|a\.?s|anonim\s+sirketi|inc\.?|llc|ltd\.?|limited|gmbh|ag|ab|oy|as|s\.?a\.?|"
+    r"pte\.?\s?ltd\.?|pty\.?\s?ltd\.?|co\.?|corp\.?|corporation|nv|bv|plc|sa|srl|s\.?r\.?l\.?)\s*$",
+    re.IGNORECASE,
+)
+
+
+def clean_brand_name(name: str) -> str:
+    """Strip legal suffixes from a publisher name used as a brand name.
+
+    "WhatsApp LLC" -> "WhatsApp", "BIM Birlesik Magazalar A.S." -> "BIM
+    Birlesik Magazalar". Repeats until stable ("X Co. Ltd."). Never empties
+    the name.
+    """
+    text = name.strip()
+    while True:
+        folded = text.translate(_TURKISH_FOLD)
+        m = _LEGAL_SUFFIX.search(folded)
+        if not m or m.start() == 0:
+            return text
+        text = text[:m.start()].rstrip(" ,.")
+        if not text:
+            return name.strip()
 
 # Hosts that are never a brand's own site: social networks, encyclopedias,
 # stores, complaint sites and free mail providers.
@@ -396,6 +427,60 @@ def _brand_keys(brand: str) -> tuple[str, list[str]]:
     return slug.replace("_", ""), distinctive
 
 
+def identity_tokens(brand: str, official_domains: Iterable[str] = (),
+                    known_apps: Iterable[str] = ()) -> set[str]:
+    """Words that identify a brand: distinctive name words, the compact name,
+    official-domain labels and known app names ("isbank", "iscep").
+
+    Generic and short tokens are dropped so "bank" or "is" never identifies
+    anything. A brand whose name is entirely generic ("Turkiye Is Bankasi")
+    is still identified by its domain label and its app names.
+    """
+    compact, distinctive = _brand_keys(brand)
+    toks = {t for t in distinctive if len(t) >= 4}
+    # A three-letter brand (QNB, n11, THY) is its own identity; names_identity
+    # matches such short tokens only as whole words ("PT Bank QNB Indonesia").
+    if len(compact) >= 3:
+        toks.add(compact)
+    for domain in official_domains:
+        label = slugify(str(domain).lower().removeprefix("www.").split(".")[0]).replace("_", "")
+        if len(label) >= 4 and label not in _GENERIC_TOKENS:
+            toks.add(label)
+    labels = {t for t in toks}
+    for app in known_apps:
+        slug = slugify(app)
+        words = [w for w in slug.split("_") if w]
+        # A one-word app name is an identity ("IsCep", "Dolap", "Whee"); a
+        # multi-word title identifies the brand only when one of its words
+        # does ("Trendyol Go", "Spotify Lite"). "Currency Converter" or "Para
+        # Birimi Donusturucu" is a product category, and anchoring a takedown
+        # on it made a stranger's converter mod Wise's problem (K-081).
+        if len(words) > 1 and not any(any(key in w for key in labels) for w in words):
+            continue
+        label = slug.replace("_", "")
+        if len(label) >= 4 and label not in _GENERIC_TOKENS:
+            toks.add(label)
+    return toks
+
+
+def names_identity(text: str, tokens: Iterable[str]) -> str | None:
+    """Return the identity token that ``text`` contains, longest first, or None.
+
+    Tokens of four letters or more match anywhere ("isbankag" carries
+    "isbank"); shorter ones only as whole words, so "bim" never fires on
+    "bimbo" but does on "BIM Birlesik Magazalar".
+    """
+    slug = slugify(text)
+    compact = slug.replace("_", "")
+    if not compact:
+        return None
+    words = set(slug.split("_"))
+    for t in sorted(tokens, key=len, reverse=True):
+        if (len(t) >= 4 and t in compact) or (len(t) < 4 and t in words):
+            return t
+    return None
+
+
 def mentions_brand(text: str, brand: str, *, full_name: bool = False) -> bool:
     """True when text names the brand: its full name, or one of its distinctive words.
 
@@ -411,8 +496,25 @@ def mentions_brand(text: str, brand: str, *, full_name: bool = False) -> bool:
     return not full_name and any(token in compact_text for token in distinctive)
 
 
-def _is_brand_site(host: str) -> bool:
-    return bool(host) and bool(_HOST_RE.match(host)) and not host_under(host, _NOT_A_BRAND_SITE)
+def _is_brand_site(host: str, brand: str | None = None) -> bool:
+    """A host that can be a brand's own site.
+
+    Social networks, stores and mail providers are excluded because a listing
+    can name them as its "website" without owning anything. The exclusion
+    does not apply when the host is that brand itself: for the brand
+    "TikTok", tiktok.com is exactly the official site (found live: the
+    platform's own listing resolved to a name-only profile).
+    """
+    if not host or not _HOST_RE.match(host):
+        return False
+    if not host_under(host, _NOT_A_BRAND_SITE):
+        return True
+    if brand:
+        compact_brand, _ = _brand_keys(brand)
+        excluded = next((d for d in _NOT_A_BRAND_SITE if host_under(host, [d])), "")
+        label = excluded.split(".")[0]
+        return len(compact_brand) >= 3 and (compact_brand == label or label in compact_brand)
+    return False
 
 
 def _same_site(a: str, b: str) -> bool:
@@ -464,14 +566,11 @@ class GooglePlayClient:
         return self._app(app_id, lang=self.lang, country=self.country)
 
 
-def _load_dotenv(path: Path = Path(".env")) -> None:
-    """Fill gaps in os.environ from .env, like the adjudicator and Serper source do."""
-    if not path.exists():
-        return
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        key, sep, value = line.strip().partition("=")
-        if sep and key and not key.startswith("#") and key.strip() not in os.environ:
-            os.environ[key.strip()] = value.strip().strip("'\"")
+def _load_dotenv(path: Path | None = None) -> None:
+    """Fill gaps in os.environ from the repo-root .env (see brandguard.config)."""
+    from brandguard.config import load_dotenv
+
+    load_dotenv(path)
 
 
 class SerperWebClient:
@@ -566,18 +665,18 @@ def discover_domain(
         website, email = str(item.get("developerWebsite") or ""), item.get("developerEmail")
         for raw in (website, _email_domain(email)):
             host = normalize_domain(raw) if raw else ""
-            if _is_brand_site(host):
+            if _is_brand_site(host, brand):
                 play_sites.append((host, _installs(item), item["appId"], full))
 
     google: list[tuple[str, str]] = []  # (host, where it came from)
     if web_result:
         panel = web_result.get("knowledgeGraph") or {}
         site = normalize_domain(str(panel.get("website") or ""))
-        if _is_brand_site(site):
+        if _is_brand_site(site, brand):
             google.append((site, "Google knowledge panel"))
         for rank, hit in enumerate((web_result.get("organic") or [])[:5], start=1):
             host = normalize_domain(str(hit.get("link") or ""))
-            if _is_brand_site(host) and (mentions_brand(host, brand)
+            if _is_brand_site(host, brand) and (mentions_brand(host, brand)
                                          or mentions_brand(str(hit.get("title") or ""), brand)):
                 google.append((host, f"Google result #{rank}"))
 

@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import scripts.watchlist_scan as ws
+import scripts.legacy.watchlist_scan as ws
 from brandguard.schema import AppRecord, BrandProfile, Publisher
 from brandguard.triage.adjudicator import RuleAdjudicator
 

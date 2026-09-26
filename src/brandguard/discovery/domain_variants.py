@@ -23,7 +23,10 @@ _HOMOGLYPH_SUBS: dict[str, list[str]] = {
 }
 
 # Words attackers append to a brand domain to look credible.
-_LURE_WORDS = ["giris", "guvenli", "online", "mobil", "hesap", "destek", "app", "login"]
+# Kept in step with domain_anatomy._LURE_WORDS: every word here is a
+# credential-bait word the classifier recognises, so a generated brand+lure
+# name is a phishing shape, not a mere mention.
+_LURE_WORDS = ["giris", "guvenli", "hesap", "destek", "login", "secure", "verify", "sifre"]
 
 # Alternative TLDs a phisher registers when the real one is taken.
 _ALT_TLDS = ["com", "net", "org", "info", "online", "site", "app", "com.tr"]

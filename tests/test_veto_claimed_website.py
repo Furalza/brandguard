@@ -89,3 +89,27 @@ def test_official_package_on_play_is_official_whatever_website_it_declares():
     # the same package on a third-party store proves nothing on its own
     mirror = bankkart.model_copy(update={"source": "apkpure"})
     assert check_publisher_veto(mirror, ziraat) is None
+
+
+def test_official_package_on_play_is_official_even_when_the_publisher_name_is_unknown():
+    # K-077: an operator typed the Play link and the domain; the profile has
+    # the package id but not (yet) the publisher's store name. The brand's own
+    # listing must never come out as a repackaged takedown.
+    profile = BrandProfile(
+        brand_name="Isbank", official_domains=["isbank.com.tr"],
+        official_publishers=[], known_official_apps=[],
+        sector="banking", official_package_ids=["com.pozitron.iscep"],
+    )
+    own = AppRecord(
+        app_id="com.pozitron.iscep", source="google_play_live", name="IsCep",
+        publisher=Publisher(name="Turkiye Is Bankasi A.S.", website="https://www.isbank.com.tr"),
+        downloads=50_000_000,
+    )
+    veto = check_publisher_veto(own, profile)
+    assert veto is not None and veto.forced_label is Label.OFFICIAL
+    assert "add it to the profile" in veto.text
+    assert check_package_veto(own, profile) is None
+    # on a mirror the same id under a foreign name is still repackaging
+    mirror = own.model_copy(update={"source": "apkpure"})
+    pv = check_package_veto(mirror, profile)
+    assert pv is not None and pv.forced_label is Label.REPACKAGED

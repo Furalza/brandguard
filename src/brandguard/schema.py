@@ -43,6 +43,10 @@ class BrandProfile(BaseModel):
     # cleared: treated as official, not impersonations, so they leave the
     # detected queue. Optional; a profile without it behaves as before.
     known_affiliates: list[str] = Field(default_factory=list)
+    # How many publishers other than the brand lead their app names with the
+    # brand word on Google Play, measured in this scan's Play run and handed to
+    # the APK-site run (K-071/K-075). None = not measured.
+    brand_word_shared_by: int | None = None
 
 
 class Publisher(BaseModel):
@@ -54,6 +58,10 @@ class Publisher(BaseModel):
     website: str | None = None
     email_domain: str | None = None
     verified: bool | None = None
+    # The store's own identifier for the publisher account (Google Play's
+    # developerId). Unlike the display name, nobody but the account owner can
+    # publish under it, so two listings sharing it are the same publisher (K-062).
+    account_id: str | None = None
 
 
 class AppRecord(BaseModel):

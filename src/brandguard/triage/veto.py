@@ -41,7 +41,9 @@ _ESTABLISHED_ACCOUNT_MAX_YEAR = 2020
 # (organic reach an impersonator cannot produce). An official package id counts
 # on its own on stores that guarantee package ids are unique.
 _ESTABLISHED_DOWNLOADS = 100_000
-_UNIQUE_PACKAGE_ID_SOURCES = ("google_play",)  # google_play, google_play_live
+# Stores where one app id belongs to one developer account: Google Play
+# (package id) and the App Store (bundle id, via the iTunes lookup, K-079).
+_UNIQUE_PACKAGE_ID_SOURCES = ("google_play", "app_store")
 
 # Unauthorized-build markers. A real app carries none of these in its NAME or
 # PACKAGE id; a redistributed, modified build advertises them ("Spotify Premium
@@ -60,7 +62,30 @@ _UNLOCK_PHRASES = (
 
 
 def _normset(values: list[str]) -> set[str]:
-    return {normalize(v) for v in values}
+    """Normalized names, each also without its legal suffix (K-080).
+
+    The App Store shows "Spotify" where Play shows "Spotify AB"; Play shows
+    "TikTok Pte. Ltd." where the profile may carry "TikTok". The legal tail
+    is not identity, so both forms of every official name are accepted.
+    """
+    from brandguard.registry import clean_brand_name
+
+    out: set[str] = set()
+    for v in values:
+        out.add(normalize(v))
+        out.add(normalize(clean_brand_name(v)))
+    out.discard("")
+    return out
+
+
+def publisher_name_matches(name: str, profile: BrandProfile) -> bool:
+    """Publisher name on the official list, with or without a legal suffix."""
+    from brandguard.registry import clean_brand_name
+
+    if not name:
+        return False
+    officials = _normset(profile.official_publishers)
+    return normalize(name) in officials or normalize(clean_brand_name(name)) in officials
 
 
 def _domain_matches_official(website: str | None, profile: BrandProfile) -> bool:
@@ -78,8 +103,15 @@ def _official_package_on_unique_store(record: AppRecord, profile: BrandProfile) 
     whatever website it declares (Bankkart declares its own card-brand site).
     On other stores any id can be carried, which is what repackaging is.
     """
-    return (record.source.startswith(_UNIQUE_PACKAGE_ID_SOURCES)
-            and record.app_id in set(profile.official_package_ids))
+    if not record.source.startswith(_UNIQUE_PACKAGE_ID_SOURCES):
+        return False
+    ids = set(profile.official_package_ids)
+    if record.app_id in ids:
+        return True
+    # An App Store listing is keyed by its URL; its bundle id (often the same
+    # string as the Android package id) rides in raw.
+    bundle = record.raw.get("bundle_id") if isinstance(record.raw, dict) else None
+    return bool(bundle) and bundle in ids
 
 
 def _website_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
@@ -122,8 +154,33 @@ def _identity_verifier(record: AppRecord, profile: BrandProfile) -> str | None:
 
 
 def check_publisher_veto(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
-    """Official veto: publisher name matches AND an identity verifier is present."""
-    if normalize(record.publisher.name) not in _normset(profile.official_publishers):
+    """Official veto: publisher name matches AND an identity verifier is present.
+
+    On a store that enforces unique package ids, an official package id is the
+    identity on its own (K-077): the profile may not know the publisher's exact
+    store name yet (an operator typed the Play link and the domain; the CSV
+    carries the legal name while Play shows a trading name), and a name the
+    profile does not know must never turn the brand's own listing into a
+    "repackaged" takedown. The text says the name was not on the list so the
+    analyst can add it.
+    """
+    name_match = publisher_name_matches(record.publisher.name, profile)
+    if _official_package_on_unique_store(record, profile):
+        note = "" if name_match else (
+            f" Publisher name '{record.publisher.name}' is not on the profile's list yet;"
+            " add it to the profile."
+        )
+        return SignalResult(
+            name="publisher_veto",
+            direction=Direction.VETO,
+            strength=1.0,
+            text=(
+                f"Package id '{record.app_id}' is an official package id on {record.source} "
+                f"(package ids are unique there), so this listing is the brand's own.{note}"
+            ),
+            forced_label=Label.OFFICIAL,
+        )
+    if not name_match:
         return None
     verifier = _identity_verifier(record, profile)
     if verifier is None:
@@ -161,7 +218,7 @@ def check_package_veto(record: AppRecord, profile: BrandProfile) -> SignalResult
     # on its own. (Found on live Serper data, where search results have no
     # publisher.)
     normalized_publisher = normalize(record.publisher.name)
-    if not normalized_publisher or normalized_publisher in _normset(profile.official_publishers):
+    if not normalized_publisher or publisher_name_matches(record.publisher.name, profile):
         return None
     return SignalResult(
         name="package_veto",
@@ -189,6 +246,66 @@ def _has_build_marker(text_norm: str) -> tuple[str, ...]:
             hits.append(marker)
     hits += [p for p in _UNLOCK_PHRASES if p in text_norm]
     return tuple(hits)
+
+
+def _relates_to_brand(record: AppRecord, profile: BrandProfile) -> bool:
+    """True when the listing names the brand (or one of its apps or domains)
+    in its name, package, URL or publisher, or carries an official package id."""
+    from brandguard.registry import identity_tokens, mentions_brand, names_identity
+
+    if record.app_id in set(profile.official_package_ids):
+        return True
+    tokens = identity_tokens(profile.brand_name, profile.official_domains, profile.known_official_apps)
+    candidates = [record.name, record.app_id]
+    if record.publisher.name:
+        candidates.append(record.publisher.name)
+    return any(mentions_brand(text, profile.brand_name) or names_identity(text, tokens)
+               for text in candidates if text)
+
+
+# Words that mark a third-party companion app: a downloader, a stats widget,
+# a tips guide or a ringtone pack that names the brand as its subject. A
+# modded build of such an app is that app's problem, not the brand's (K-068).
+_COMPANION_WORDS = (
+    "downloader", "download video", "video download", "save video", "saver", "stats",
+    "statistics", "tips", "guide", "tutorial", "walkthrough", "wallpaper", "widget",
+    "template", "templates", "followers", "likes", "ringtone", "sounds", "fonts",
+    "captions", "hashtag", "reward", "rewards", "cheat", "tricks", "trik", "dj ",
+    "katalog", "catalog", "catalogue", "brosur", "aktuel",
+)
+# The brand as the object of a preposition ("for Instagram", "para Spotify").
+_COMPANION_PREPOSITIONS = ("for", "on", "from", "with", "para", "pour", "fur", "per", "untuk", "icin")
+
+
+def companion_marker(name_norm: str, brand_tokens: set[str]) -> str | None:
+    """Return the phrase that marks a companion app in a normalized name, or None.
+
+    Either a preposition immediately before a brand token ("... for instagram")
+    or one of the companion words anywhere in the name. The name must already
+    be known to name the brand; this only says in what role.
+    """
+    words = name_norm.split()
+
+    def is_brand_word(word: str) -> bool:
+        return len(word) >= 4 and any(word == t or word.startswith(t) or t.startswith(word)
+                                      for t in brand_tokens if len(t) >= 4)
+
+    for i in range(1, len(words)):
+        # the brand within three words of the preposition: "for instagram",
+        # "for the pegasus", "for asus pegasus 5000" (a phone model, found live)
+        if words[i - 1] in _COMPANION_PREPOSITIONS:
+            window = words[i:i + 3]
+            if any(is_brand_word(w) for w in window):
+                return " ".join([words[i - 1], *window])
+        # "download tiktok video", "save instagram videos": a downloader named
+        # by its verb rather than by a "downloader" noun
+        if (i + 1 < len(words) and words[i - 1] in ("download", "save", "downloader")
+                and is_brand_word(words[i]) and words[i + 1] in ("video", "videos", "photo", "photos")):
+            return " ".join(words[i - 1:i + 2])
+    for w in _COMPANION_WORDS:
+        if (w.strip() in words) or (" " in w and w in name_norm) or (w.endswith(" ") and name_norm.startswith(w)):
+            return w.strip()
+    return None
 
 
 def check_unauthorized_build_veto(record: AppRecord, profile: BrandProfile) -> SignalResult | None:
@@ -229,6 +346,26 @@ def check_unauthorized_build_veto(record: AppRecord, profile: BrandProfile) -> S
     pkg_norm = "" if is_url else normalize(record.app_id.replace(".", " ").replace("_", " "))
     markers = _has_build_marker(f"{name_norm} {pkg_norm}".strip())
     if not markers:
+        return None
+
+    # A modded build of SOME app is only this brand's problem when it is a
+    # build of this brand's app: the name, the package or the listing URL must
+    # name the brand, or the package must be an official one. Without that
+    # relation the hit is a store's index page or another product's mod
+    # ("Amazon Music MOD" on a Spotify scan, found live) and is left to the
+    # scored signals, which read it as unrelated.
+    if not _relates_to_brand(record, profile):
+        return None
+
+    # "Video Downloader for Instagram (MOD)" is a modded third-party companion
+    # app, not a modified Instagram: no takedown for the brand. The scored
+    # layer records why (companion_build_signal) and reads it as related.
+    from brandguard.registry import identity_tokens
+
+    # Brand and domain tokens only: an app name like "Spotify for Artists"
+    # must not make "artists" a brand word.
+    tokens = identity_tokens(profile.brand_name, profile.official_domains)
+    if record.app_id not in set(profile.official_package_ids) and companion_marker(name_norm, tokens):
         return None
 
     return SignalResult(

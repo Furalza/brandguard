@@ -20,8 +20,28 @@ def test_mod_build_is_repackaged():
 
 
 def test_cracked_build_is_repackaged():
-    v = check_unauthorized_build_veto(_rec("Netflix Cracked", "com.netflix.cracked"), PROFILE)
+    v = check_unauthorized_build_veto(_rec("Spotify Cracked", "com.spotify.cracked"), PROFILE)
     assert v is not None and v.forced_label == Label.REPACKAGED
+
+
+def test_mod_of_another_product_is_not_this_brands_takedown():
+    # K-065: "Amazon Music MOD" on a Spotify scan is a real repackaged app, but
+    # not of Spotify. Without a brand relation the veto stays silent and the
+    # scored signals read the hit as unrelated.
+    v = check_unauthorized_build_veto(_rec("Netflix Cracked", "com.netflix.cracked"), PROFILE)
+    assert v is None
+    netflix = BrandProfile(brand_name="Netflix", official_domains=["netflix.com"],
+                           official_publishers=["Netflix, Inc."], known_official_apps=["Netflix"],
+                           sector="unknown")
+    v = check_unauthorized_build_veto(_rec("Netflix Cracked", "com.netflix.cracked"), netflix)
+    assert v is not None and v.forced_label == Label.REPACKAGED
+
+
+def test_store_index_page_with_mod_in_title_is_not_a_takedown():
+    v = check_unauthorized_build_veto(
+        _rec("Android Apps & MOD APKs Download with Safety 2026 - Page 2",
+             "https://apkdone.com/app/page/2/"), PROFILE)
+    assert v is None
 
 
 def test_unlock_phrase_is_repackaged():
@@ -30,7 +50,10 @@ def test_unlock_phrase_is_repackaged():
 
 
 def test_marker_in_package_id_is_repackaged():
-    v = check_unauthorized_build_veto(_rec("GB WhatsApp", "com.gbwhatsapp.mod"), PROFILE)
+    profile = BrandProfile(brand_name="WhatsApp", official_domains=["whatsapp.com"],
+                           official_publishers=["WhatsApp LLC"], known_official_apps=["WhatsApp"],
+                           sector="unknown")
+    v = check_unauthorized_build_veto(_rec("GB WhatsApp", "com.gbwhatsapp.mod"), profile)
     assert v is not None and v.forced_label == Label.REPACKAGED
 
 
@@ -95,8 +118,10 @@ def test_government_page_is_not_an_app():
 
 
 def test_real_aptoide_mod_app_still_flagged():
-    # A genuine mod app on an APK site (aptoide /app) is still repackaged.
-    rec = _rec("Hardcore Mod for MCPE", "https://hardcore-mod-for-mcpe.en.aptoide.com/app", "ModDev")
+    # A genuine mod app on an APK site (aptoide /app) is still repackaged when
+    # it names the brand; an add-on that only uses an abbreviation ("MCPE")
+    # is a known limit of the brand-relation guard (K-065).
+    rec = _rec("Minecraft PE Hardcore Mod", "https://minecraft-pe-hardcore-mod.en.aptoide.com/app", "ModDev")
     profile = BrandProfile(brand_name="Minecraft", official_domains=["minecraft.net"],
                            official_publishers=["Mojang"], known_official_apps=["Minecraft"],
                            sector="unknown")

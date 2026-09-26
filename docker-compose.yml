@@ -1,0 +1,30 @@
+services:
+  brandguard:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # where the console reads the current public address from (tunnel profile)
+      - BRANDGUARD_TUNNEL_METRICS=http://cloudflared:2000
+    volumes:
+      # profiles, the SQLite database and results persist across restarts
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # Free public address through a Cloudflare quick tunnel, as a sidecar:
+  #   docker compose --profile tunnel up --build -d
+  # It restarts with Docker, needs no open terminal window, and the console
+  # header shows the current https://....trycloudflare.com address.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: >
+      tunnel --no-autoupdate --edge-ip-version 4 --protocol http2
+      --metrics 0.0.0.0:2000 --url http://brandguard:8000
+    depends_on:
+      - brandguard
+    ports:
+      - "127.0.0.1:2000:2000"
+    restart: unless-stopped

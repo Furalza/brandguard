@@ -1,0 +1,16 @@
+# Automatic HTTPS for the domain in BRANDGUARD_DOMAIN; everything goes to the app.
+# The app's own login (BRANDGUARD_BASIC_AUTH in .env) protects the console.
+{$BRANDGUARD_DOMAIN} {
+    encode gzip
+    reverse_proxy brandguard:8000 {
+        # scans can take minutes; keep long polls and exports alive
+        transport http {
+            read_timeout 10m
+        }
+    }
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+}

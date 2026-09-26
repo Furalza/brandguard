@@ -42,6 +42,96 @@ it produces one verdict per candidate listing:
 Every evidence line is auditable: an analyst decides on facts, not on "the model
 was suspicious".
 
+## Web console (v2)
+
+The engine is exposed as a web application: type a brand name, a domain, a
+package id or a store URL, pick the sources, and read the categorised findings
+with their evidence. Everything an operator sees is computed by the same
+cascade the CLI runs; the console adds persistence (SQLite), background
+execution and the operator vocabulary.
+
+```
+pip install -e ".[api,llm,icons,live,serper,whois]"
+cp .env.example .env            # add SERPER_API_KEY and, optionally, an LLM key
+cd web && npm install && npm run build && cd ..
+python -m brandguard.api        # http://127.0.0.1:8000  (API docs at /api/docs)
+```
+
+or, with Docker: `docker compose up --build` and open http://localhost:8000.
+To put it on a server with HTTPS for a demo others open, see `docs/DEPLOY.md`.
+
+Screens:
+
+- **New scan** – three fields: brand name, official domain, Google Play link
+  or package id. Any one is enough; the domain is the trust anchor and the Play
+  link marks the brand's own app, so all three give the most exact profile with
+  no guessing (K-077). Source cards, a depth setting (quick / normal / deep),
+  recent scans.
+- **Scan** – a status card per source (a failed source shows its error and can
+  be retried alone), category counters, a findings table with the strongest
+  evidence line per row, and a details drawer: every evidence line with its
+  direction, the decision path (which tier decided and why), first-seen date
+  and a store link.
+- **Brands** – the brand profiles the engine scans against. Profiles created
+  automatically from an input are marked *needs review* until an operator
+  confirms them; editing a profile makes it authoritative.
+
+Operator categories map onto engine labels in one place
+(`brandguard/product/category.py`): official; malicious (impersonation,
+repackaged, live high-priority lookalike); suspicious (uncertain, other
+lookalikes and generated watch names); affiliate (a benign listing whose
+publisher identity points at the brand: probably the brand's own regional or
+secondary app, unverified, K-063); related (third-party); noise (unrelated,
+non-listing pages). The engine labels are stored next to the category and
+shown in the details view (and in the row's inline "why" panel), where every
+evidence line is rendered in plain words and grouped into what pulls toward
+a threat, what pulls toward legitimacy, and what decided on its own. A listing
+published from the same Play developer account as a verified official app is
+official (K-062); the profile's official package ids are fetched directly in
+every Play scan so those anchors are always present (K-066). A modded build is
+a takedown only when it is a build of this brand's app (K-065).
+
+Input resolution (`brandguard/product/resolve.py`) follows the registry's trust
+rules: a typed domain is the trust anchor and only needs the Play publisher
+found under it; a typed name needs two independent sources to agree on the
+domain (K-054); a claimed developer website counts only with an established
+app (K-055). Whatever could not be verified is written as a review note on the
+brand, never into the profile.
+
+Database: `data/brandguard.db` (SQLite, WAL). Set `BRANDGUARD_DATABASE_URL` for
+Postgres. Tables: `brands`, `scans`, `scan_sources`, `findings`. The watchlist
+JSON profiles are imported at startup; a profile edited in the console is not
+overwritten by later imports.
+
+Working the results: an analyst marks a finding as *false positive*, *confirmed*,
+*takedown sent* or *resolved* (with a note); the mark is kept per brand and
+key, so the same package id or domain carries it into every later scan, and
+"Needs action" counts only what nobody has settled. Each scan shows what
+changed since the brand's previous scan with the same sources (new, gone,
+changed category; `GET /api/scans/{id}/diff`) and a "New" tab. A brand can be
+re-scanned daily or weekly (brand page); scheduled scans are ordinary scans
+marked as such. See K-073.
+
+Several brands at once: switch the form to "Several brands" and paste one per
+line (`Name | domain | Play link`, any subset); each line becomes its own scan
+and a batch page follows them together (`POST /api/scans/batch`).
+
+Frontend development: `cd web && npm run dev` proxies `/api` to port 8000.
+
+Showing it to someone else (a demo) without them installing anything: run it
+here and hand out a URL. On the same network, `docker compose up` already
+listens on all interfaces, so `http://<your LAN ip>:8000` works (allow port
+8000 through the local firewall). Across the internet, put a tunnel in front:
+`cloudflared tunnel --url http://localhost:8000` prints a public
+`*.trycloudflare.com` address (no account needed; ngrok is equivalent). The
+console has no user model, so set `BRANDGUARD_BASIC_AUTH=user:password` in
+`.env` before exposing it: every request then needs that login (the browser
+prompts for it), and nobody who guesses the URL can burn the API keys. Close
+the tunnel after the demo. To let them run it themselves without cloning,
+`docker save brandguard-main-brandguard | gzip > brandguard.tar.gz`, send the
+archive with a `.env`, and they `docker load` and `docker run --env-file .env
+-p 8000:8000 brandguard-main-brandguard`.
+
 ## Architecture
 
 ```
@@ -56,7 +146,7 @@ Discovery
 Triage cascade                                   cost per record
     T0  veto + string/metadata signals + fusion     ~milliseconds
     T1  perceptual-hash icon similarity             ~tens of ms, only if undecided
-    T2  LLM adjudicator (injection-safe summary)    ~seconds, only if still undecided
+    T2  text reader (LLM answers questions on a bounded excerpt; code decides)  ~seconds, only if still undecided
     |
     v
 Verdict  { label, confidence, evidence[] }
@@ -167,13 +257,27 @@ search), `website` (lookalike domains), `crtsh` (Certificate Transparency logs,
 the deepest source: a phishing domain appears there the moment it gets a
 certificate). Every run is saved to `results/<UTC>__<brand>__<source>.json` and
 appended to `results/run_log.csv`, so runs are comparable over time; compare two
-with `scripts/watchlist_diff.py`. A throttled source for one brand is skipped and
+with the product database (scans and findings tables). A throttled source for one brand is skipped and
 the sweep continues.
 
 The LLM tier (T2) is optional. With `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in
 the environment or a `.env` file, it uses the real model; without one it falls
 back to a deterministic rule adjudicator, so the command works everywhere. Copy
-`.env.example` to `.env` to configure a key.
+`.env.example` to `.env` to configure a key; `BRANDGUARD_LLM_MODEL` overrides
+the model.
+
+Since K-078 the model is a *text reader*: it receives the app name, publisher,
+website host and a capped description excerpt inside a delimited block marked
+untrusted, and answers a fixed set of questions with enum answers (what the app
+is relative to the brand: the brand's own service / a companion tool / a
+namesake / unrelated; whether it claims to be official; whether it asks for the
+brand's credentials; whether the text carries instructions aimed at the
+reader). The leaning is derived in code from those answers and the hard facts;
+the model never emits a label and its signal is dampened as before, so it can
+settle a benign case and explain a listing but cannot make a takedown on its
+own. Its lines appear in the console under "What the listing text says".
+Readings are cached in `data/t2_cache.sqlite`. To measure the reader on your
+own exports: `python scripts/replay_t2.py exports/*.json --only-changed`.
 
 ## Evaluation
 

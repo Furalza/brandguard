@@ -1,7 +1,6 @@
 """Tests for adjudicator provider selection and .env handling."""
 
 import os
-from pathlib import Path
 
 import pytest
 
@@ -42,10 +41,14 @@ def test_openai_key_selected_when_only_openai(clean_env, monkeypatch, tmp_path):
 
 
 def test_dotenv_fills_gap_but_does_not_override(clean_env, monkeypatch, tmp_path):
-    monkeypatch.chdir(tmp_path)
-    Path(".env").write_text(
+    # The .env is resolved from the repo root (or BRANDGUARD_ENV_FILE), never
+    # from the current directory, so an API server or scheduled task started
+    # elsewhere still finds its keys.
+    env_file = tmp_path / "custom.env"
+    env_file.write_text(
         "OPENAI_API_KEY=from-file\nANTHROPIC_API_KEY=also-from-file\n", encoding="utf-8"
     )
+    monkeypatch.setenv("BRANDGUARD_ENV_FILE", str(env_file))
     monkeypatch.setenv("ANTHROPIC_API_KEY", "from-shell")
     _load_dotenv_once()
     assert os.environ["ANTHROPIC_API_KEY"] == "from-shell"  # real env wins

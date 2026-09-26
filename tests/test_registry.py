@@ -267,7 +267,8 @@ def test_enrichment_accepts_email_domain_proof():
 def test_enrichment_is_merged_after_csv_values_and_reused(tmp_path):
     reg = _reg("ziraat,Ziraat,ziraatbank.com.tr,banking,Manual Publisher,yes\n")
     play = FakePlay(ZIRAAT_PLAY)
-    enricher = lambda e: enrich_from_play(e, play)
+    def enricher(e):
+        return enrich_from_play(e, play)
 
     _sync(reg, tmp_path, enricher=enricher)
     data = json.loads((tmp_path / "ziraat.json").read_text(encoding="utf-8"))

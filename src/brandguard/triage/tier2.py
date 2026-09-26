@@ -20,12 +20,33 @@ from __future__ import annotations
 from brandguard.schema import AppRecord, BrandProfile, Label
 from brandguard.triage.adjudicator import (
     Adjudicator,
+    AdjudicatorOpinion,
     build_case_summary,
     get_adjudicator,
     opinion_as_signal,
 )
 from brandguard.triage.fusion import Decision, _decide_from_signals
+from brandguard.triage.reader import build_case_text, reading_evidence
 from brandguard.triage.scored_signals import collect_signals
+
+
+def _ask(adjudicator: Adjudicator, case, record: AppRecord, profile: BrandProfile) -> AdjudicatorOpinion:
+    """Prefer the text reader (K-078) when the adjudicator offers one."""
+    read = getattr(adjudicator, "read", None)
+    if callable(read):
+        return read(case, build_case_text(record, profile))
+    return adjudicator.adjudicate(case)
+
+
+def _with_reading(decision: Decision, opinion: AdjudicatorOpinion) -> Decision:
+    """Append the reader's analyst lines (weightless) to a decision."""
+    if opinion.reading is None:
+        return decision
+    extra = reading_evidence(opinion.reading)
+    if not extra:
+        return decision
+    verdict = decision.verdict.model_copy(update={"evidence": [*decision.verdict.evidence, *extra]})
+    return Decision(verdict=verdict, escalate=decision.escalate, reason=decision.reason)
 
 
 def triage_t2(
@@ -35,12 +56,25 @@ def triage_t2(
     adjudicator: Adjudicator | None = None,
 ) -> Decision:
     """Resolve a still-undecided record with the adjudicator's help."""
-    if not prior.escalate:
+    if not prior.escalate and prior.verdict.label != Label.UNCERTAIN:
         return prior  # decided earlier; spend nothing
+    # An "uncertain" that T0 did not flag for escalation (a score just under
+    # the grey band, K-078) is still undecided: the whole point of T2 is to
+    # settle what the rules could not, so it is read too.
 
     adjudicator = adjudicator or get_adjudicator()
     case = build_case_summary(record, profile, prior.verdict.conflicts)
-    opinion = adjudicator.adjudicate(case)
+    try:
+        opinion = _ask(adjudicator, case, record, profile)
+    except Exception as exc:  # noqa: BLE001 - a model outage must not abort a scan
+        # The adjudicator is one signal among many. When it is unreachable the
+        # honest outcome is "no opinion": the record keeps whatever the
+        # deterministic layer can say and the failure is written into the
+        # evidence so the analyst (and the run log) can see the model was down.
+        opinion = AdjudicatorOpinion(
+            leaning=Label.UNCERTAIN.value, strength=0.0,
+            reasoning=f"adjudicator unavailable ({type(exc).__name__})",
+        )
 
     signals = [*collect_signals(record, profile), opinion_as_signal(opinion)]
     decision = _decide_from_signals(record, profile, signals, tier=2)
@@ -66,10 +100,10 @@ def triage_t2(
                 "tiers_used": [0, 2],
             }
         )
-        return Decision(verdict=verdict, escalate=False, reason="adjudicated_benign")
+        return _with_reading(Decision(verdict=verdict, escalate=False, reason="adjudicated_benign"), opinion)
 
     if decision.escalate:
         # Final answer is uncertain; stop escalating.
-        return Decision(verdict=decision.verdict, escalate=False, reason="final_uncertain")
+        return _with_reading(Decision(verdict=decision.verdict, escalate=False, reason="final_uncertain"), opinion)
 
-    return decision
+    return _with_reading(decision, opinion)

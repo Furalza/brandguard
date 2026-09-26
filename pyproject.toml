@@ -15,6 +15,10 @@ icons = ["imagehash>=4.3", "pillow>=10.0"]
 live = ["google-play-scraper>=1.2"]
 serper = ["requests>=2.28"]
 whois = ["python-whois>=0.9"]
+api = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "sqlalchemy>=2.0", "httpx>=0.27"]
+all = [
+    "brandguard[dev,llm,icons,live,serper,whois,api]",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -22,6 +26,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["brandguard*"]
 
 [tool.ruff]
 line-length = 100

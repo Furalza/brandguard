@@ -6,7 +6,7 @@
 
 Every run is saved under results/ with an ISO UTC timestamp and appended to
 results/run_log.csv, so runs are comparable across sources and over time. Use
-scripts/watchlist_diff.py on two result files to see what changed.
+the product API (python -m api) or scripts/legacy/ for the older one-source tools.
 """
 
 from __future__ import annotations

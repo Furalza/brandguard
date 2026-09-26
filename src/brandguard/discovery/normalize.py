@@ -67,10 +67,16 @@ def normalize(name: str) -> str:
     Steps, in order: strip invisible characters, NFKC to unify compatibility
     forms, fold confusables to Latin, flatten Turkish characters, lowercase,
     drop punctuation, collapse whitespace.
+
+    Turkish folding runs BEFORE lowercasing on purpose: Python lowercases the
+    dotted capital "İ" to "i" plus a combining dot (U+0307), which the Turkish
+    table can no longer see and the punctuation step would turn into a space,
+    splitting "İş Bankası" into "i s bankasi". Folding first keeps the word whole.
     """
     text = _INVISIBLE.sub("", name)
     text = unicodedata.normalize("NFKC", text)
     text = _fold(text, _CONFUSABLES)
+    text = _fold(text, _TURKISH)
     text = text.lower()
     text = _fold(text, _TURKISH)
     text = _NON_ALNUM.sub(" ", text)

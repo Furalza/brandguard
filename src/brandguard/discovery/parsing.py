@@ -34,9 +34,19 @@ def parse_downloads(value: object) -> int | None:
     if not isinstance(value, str):
         return None
 
-    text = value.strip().lower().replace(",", "").replace(" ", "").rstrip("+")
+    text = value.strip().lower().replace(" ", "").replace(" ", "").rstrip("+")
     if not text:
         return None
+
+    # Thousands separators come in two conventions. English writes "1,000,000"
+    # and uses "." for decimals ("2.5M"); Turkish and most of Europe write
+    # "1.000.000" and use "," for decimals ("1,5M"). A separator followed by
+    # exactly three digits, possibly repeated, is a grouping mark in either
+    # convention; anything else is a decimal point.
+    if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+[kmb]?", text):
+        text = re.sub(r"[.,]", "", text)
+    else:
+        text = text.replace(",", ".")
 
     match = re.fullmatch(r"(\d+(?:\.\d+)?)([kmb]?)", text)
     if not match:
@@ -53,7 +63,7 @@ def parse_date(value: object) -> date | None:
     strings ("2 weeks ago") are intentionally not guessed; they return None so a
     fabricated date never becomes evidence.
     """
-    if value is None:
+    if value is None or isinstance(value, bool):
         return None
     if isinstance(value, datetime):
         return value.date()

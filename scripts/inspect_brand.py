@@ -9,7 +9,7 @@ package id of each hit, so you can copy the real values into a profile JSON.
 
 Then build data/profiles/<brand>.json from the values it shows, and run:
 
-    python scripts/scrape_and_triage.py --profile data/profiles/<brand>.json
+    python -m brandguard.hunt --source play --profile data/profiles/<brand>.json
 
 Requires: pip install -e ".[live]"
 """
