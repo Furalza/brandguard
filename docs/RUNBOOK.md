@@ -13,7 +13,7 @@ docker compose stop cloudflared                  # close the public link (app ke
 docker compose ps                                # what is running
 docker compose logs --tail 20                    # last log lines of the app
 docker compose logs cloudflared | Select-String trycloudflare   # the public address
-docker compose down                              # stop everything (data is kept)
+docker compose --profile tunnel down             # stop everything incl. the tunnel (data is kept)
 ```
 
 ## A. After every new zip (code update)
@@ -82,9 +82,11 @@ container is not running: `docker compose ps`, then
 ## C. Day-to-day
 
 ```powershell
-docker compose down      # stop everything (app + tunnel); data is kept
-docker compose up -d     # start the app again without rebuilding
-docker compose logs -f   # live log; Ctrl+C to leave
+docker compose --profile tunnel down   # stop everything (app + tunnel); data is kept.
+                                       # Plain "docker compose down" leaves the tunnel
+                                       # container running and complains "network in use".
+docker compose up -d                   # start the app again without rebuilding
+docker compose logs -f                 # live log; Ctrl+C to leave
 ```
 
 ## D. Test inputs (three fields each)
@@ -101,7 +103,8 @@ as they are (the `|` separates name, domain, Play link or package id).
 ## Notes
 
 - With Docker you never run `npm run build`, `pip install` or `python -m brandguard.api`; the image does all of it.
-- Rebuilding the app (A2) does not restart the tunnel container; the address stays the same. `docker compose down` removes both, and the next start gets a new address.
+- Rebuilding the app (A2) does not restart the tunnel container; the address stays the same. `docker compose --profile tunnel down` removes both, and the next start gets a new address.
+- Moving to another folder (a fresh clone): copy `.env` and `data\` over, stop the containers in the old folder first (both want port 8000), then start in the new one.
 - A scan takes 1-3 minutes and spends Serper credits (and a few cents of model calls); pre-scan the brands you want to show before the demo.
 - Exports: "Export JSON" on a scan page, "Export all (ZIP)" on a batch page, from 127.0.0.1:8000.
 - Reader cache: `data\t2_cache.sqlite`; delete it to force every listing to be read again.

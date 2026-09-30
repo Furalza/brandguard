@@ -26,7 +26,7 @@ export function Counters({
     )
   }
   return (
-    <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${shown.length + 1}, minmax(0, 1fr))` }}>
+    <div className="grid-counters">
       <button
         type="button"
         onClick={() => onSelect?.('all')}

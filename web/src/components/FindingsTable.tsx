@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { LABEL_TEXT, SOURCE_LABEL, type Brand, type Finding, type Source } from '../api'
 import { plainEvidence } from '../explain'
+import { useMediaQuery } from '../hooks'
 import { CategoryBadge, Confidence, Empty } from '../ui'
 import { Explanation } from './Explanation'
 import { ReviewBadge } from './ReviewPanel'
@@ -46,6 +47,7 @@ export function FindingsTable({
   onReviewChanged?: () => void
 }) {
   const [open, setOpen] = useState<string | null>(null)
+  const phone = useMediaQuery('(max-width: 640px)')
 
   if (!items.length) {
     if (scanning)
@@ -63,6 +65,58 @@ export function FindingsTable({
   }
 
   const toggle = (f: Finding) => setOpen(open === f.id ? null : f.id)
+
+  if (phone) {
+    // One card per finding: the table's seven columns do not fit a phone,
+    // and the explanation must open at full width under its row.
+    return (
+      <ul className="flex flex-col">
+        {items.map((f) => {
+          const expanded = open === f.id
+          return (
+            <li key={f.id} className="px-3 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium" style={{ overflowWrap: 'anywhere' }}>{f.name || f.key}</div>
+                  <div className="text-xs faint mono" style={{ overflowWrap: 'anywhere' }}>
+                    {f.kind === 'app' && f.name ? f.key : LABEL_TEXT[f.label] ?? f.label}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <CategoryBadge category={f.category} />
+                  <ReviewBadge review={f.review} />
+                </div>
+              </div>
+              <div className="text-xs muted mt-1.5 leading-snug">{topEvidence(f)}</div>
+              <div className="flex items-center justify-between gap-2 mt-2 text-xs faint">
+                <span className="truncate">
+                  {sourceText(f.source)} · {tierText(f)} · {f.seen_before ? 'seen earlier' : 'new'}
+                </span>
+                {f.kind === 'domain' ? (
+                  <span className="tnum shrink-0">similarity {Math.round((f.similarity ?? 0) * 100)}%</span>
+                ) : (
+                  <Confidence value={f.confidence} />
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <button type="button" className="btn btn-sm" aria-expanded={expanded} onClick={() => toggle(f)}>
+                  {expanded ? 'Hide why' : 'Why?'}
+                </button>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => onSelect(f)}>
+                  Details
+                </button>
+              </div>
+              {expanded && (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px dashed var(--border-strong)' }}>
+                  <Explanation finding={f} brand={brand} onBrandUpdated={onBrandUpdated} onReviewChanged={onReviewChanged} compact />
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    )
+  }
 
   return (
     <table className="table" style={{ minWidth: 900 }}>

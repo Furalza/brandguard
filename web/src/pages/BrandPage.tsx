@@ -80,7 +80,7 @@ export default function BrandPage() {
   ]
 
   return (
-    <div className="grid gap-6" style={{ gridTemplateColumns: '400px minmax(0, 1fr)' }}>
+    <div className="layout-brand">
       <section className="flex flex-col gap-4">
         <div>
           <div className="text-xs faint mb-1"><Link to="/brands">Brands</Link> / {brand.id}</div>

@@ -130,7 +130,7 @@ export function Explanation({
       </section>
 
       {f.kind === 'app' && (raw.publisher || website || installs) && (
-        <section className="grid gap-3 text-sm" style={{ gridTemplateColumns: compact ? 'repeat(4, minmax(0, 1fr))' : '1fr 1fr' }}>
+        <section className={`text-sm ${compact ? 'grid-4' : 'grid-2'}`}>
           <Fact label="Publisher" value={typeof raw.publisher === 'string' && raw.publisher ? raw.publisher : null} />
           <Fact label="Installs" value={installs ? `${installs}+` : null} />
           <Fact

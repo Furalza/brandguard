@@ -98,7 +98,7 @@ export default function StartPage() {
   const toggle = (s: Source) => setSources(sources.includes(s) ? sources.filter((x) => x !== s) : [...sources, s])
 
   return (
-    <div className="grid gap-8" style={{ gridTemplateColumns: 'minmax(0, 1fr) 360px' }}>
+    <div className="layout-start">
       <section>
         <div className="mb-4">
           <h1 className="text-xl font-semibold tracking-tight mb-1">New scan</h1>
@@ -125,7 +125,7 @@ export default function StartPage() {
 
           {mode === 'single' ? (
             <div>
-              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+              <div className="grid-3">
                 <label className="flex flex-col gap-1">
                   <span className="label">Brand name</span>
                   <input autoFocus className="input" placeholder="Pegasus" value={name} onChange={(e) => setName(e.target.value)} disabled={busy} />
@@ -188,7 +188,7 @@ export default function StartPage() {
 
           <div>
             <div className="label mb-2">Sources</div>
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+            <div className="grid-4">
               {SOURCES.map((s) => {
                 const on = sources.includes(s)
                 const disabled = serperOff && (s === 'serper' || s === 'website')
@@ -211,7 +211,7 @@ export default function StartPage() {
 
           <div>
             <div className="label mb-2">Depth</div>
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+            <div className="grid-3">
               {(Object.keys(DEPTH_TEXT) as Depth[]).map((d) => (
                 <label key={d} className={`option ${depth === d ? 'active' : ''}`}>
                   <input type="radio" className="mt-1" name="depth" checked={depth === d} onChange={() => setDepth(d)} />

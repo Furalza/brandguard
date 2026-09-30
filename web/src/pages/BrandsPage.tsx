@@ -72,7 +72,7 @@ export default function BrandsPage() {
           {error}
         </div>
       )}
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden table-wrap">
         {!data ? (
           <div className="p-6 faint">Loading…</div>
         ) : data.length === 0 ? (

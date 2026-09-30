@@ -302,6 +302,18 @@ Beklenen etki (Wise): 8 yanlış malicious → 0-1, 10 Affiliate? → 0, mirror 
 | `src/brandguard/product/affiliate.py` | Kelime paylaşılıyorsa yalnız isim tokenine dayanan Affiliate? ipucu yok (ConnectWise, Workwise) |
 | `tests/` | +4 test (382) |
 
+## v3.10 — telefon ve tablet düzeni
+
+| Dosya | Değişiklik |
+|---|---|
+| `web/src/index.css` | Duyarlı sınıflar: `.layout-start/.layout-brand` (≤1024px tek sütun), `.grid-2/3/4` (≤640px tek sütun), `.grid-counters` (telefonda 3'lü), `.grid-sources`, `.table-wrap` (yatay kaydırma), sekmeler sarılır, başlık sıkışır, sağlık çipleri gizlenir, çekmece tam ekran |
+| `web/src/hooks.ts` | `useMediaQuery` |
+| `web/src/components/FindingsTable.tsx` | ≤640px'de tablo yerine **kart listesi**; "Why?" açıklaması kartın altında tam genişlikte |
+| `web/src/pages/ScansPage.tsx` | Telefonda kart listesi (marka, girdi, durum, sayaçlar, Open/Cancel/Delete) |
+| `web/src/pages/*.tsx`, `components/*.tsx`, `Layout.tsx` | Sabit inline grid'ler sınıflara taşındı; sayfa başlıkları ve düğmeler sarılır; klavye ipuçları telefonda gizli |
+
+Yalnızca `web/src` değişti.
+
 ## Silinen (taşınan) dosyalar
 `scripts/watchlist_scan.py`, `watchlist_diff.py`, `scrape_and_triage.py`,
 `serper_hunt.py`, `website_hunt.py`, `crtsh_hunt.py` → `scripts/legacy/`

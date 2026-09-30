@@ -85,10 +85,10 @@ function PublicLink({ url }: { url: string }) {
   )
 }
 
-function HealthChip({ label, ok, text, title }: { label: string; ok: boolean; text: string; title: string }) {
+function HealthChip({ label, ok, text, title, className = '' }: { label: string; ok: boolean; text: string; title: string; className?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs ${className}`}
       style={{ border: '1px solid var(--border)', background: 'var(--surface-2)' }}
       title={title}
     >
@@ -109,8 +109,8 @@ export default function Layout() {
         className="sticky top-0 z-20"
         style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
-        <div className="mx-auto max-w-[1400px] px-5 flex items-center gap-6" style={{ height: 52 }}>
-          <NavLink to="/" className="flex items-center gap-2 font-semibold tracking-tight text-[15px]">
+        <div className="header-inner mx-auto max-w-[1400px] px-5 flex items-center gap-6" style={{ height: 52 }}>
+          <NavLink to="/" className="brand-word flex items-center gap-2 font-semibold tracking-tight text-[15px] whitespace-nowrap">
             <span
               aria-hidden
               className="inline-block w-4 h-4 rounded-sm"
@@ -118,7 +118,7 @@ export default function Layout() {
             />
             BrandGuard
           </NavLink>
-          <nav className="flex items-center gap-1">
+          <nav className="header-nav flex items-center gap-1">
             <NavLink to="/" end className={link}>
               New scan
             </NavLink>
@@ -139,6 +139,7 @@ export default function Layout() {
                   </span>
                 )}
                 <HealthChip
+                  className="hide-sm"
                   label="Reader"
                   ok={health.adjudicator !== 'rules'}
                   text={health.adjudicator === 'rules' ? 'rules only' : health.adjudicator_model ?? health.adjudicator}
@@ -149,12 +150,13 @@ export default function Layout() {
                   }
                 />
                 <HealthChip
+                  className="hide-sm"
                   label="APK sites"
                   ok={health.serper_configured}
                   text={health.serper_configured ? 'on' : 'off'}
                   title="Web search for APK mirror sites (Serper key). Off means only Google Play is scanned."
                 />
-                <span className="text-xs faint ml-1" title="Build version">
+                <span className="text-xs faint ml-1 hide-sm" title="Build version">
                   v{health.version}
                 </span>
               </>
@@ -164,7 +166,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1400px] px-5 py-6 flex-1">
+      <main className="page mx-auto w-full max-w-[1400px] px-5 py-6 flex-1">
         <Outlet />
       </main>
     </div>

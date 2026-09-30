@@ -11,7 +11,7 @@ const STATUS: Record<string, { text: string; color: string }> = {
 
 export function SourceStrip({ runs, onRetry }: { runs: SourceRun[]; onRetry?: (s: Source) => void }) {
   return (
-    <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.max(runs.length, 1)}, minmax(0, 1fr))` }}>
+    <div className="grid-sources">
       {runs.map((r) => {
         const st = STATUS[r.status] ?? STATUS.queued
         const issues = r.warnings.length + r.errors.length

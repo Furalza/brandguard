@@ -45,7 +45,7 @@ export default function BatchPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-4">
+      <div className="page-head flex items-start justify-between gap-4">
         <div>
           <div className="text-xs faint mb-1">
             <Link to="/scans">Scans</Link> / batch {batch.id.slice(0, 8)}
@@ -62,7 +62,7 @@ export default function BatchPage() {
             <span style={{ width: `${batch.scans.length ? Math.round((done / batch.scans.length) * 100) : 0}%` }} />
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="actions flex items-center gap-2 shrink-0">
           {live && (
             <button
               type="button"
@@ -107,7 +107,7 @@ export default function BatchPage() {
 
       <Counters counts={batch.totals} />
 
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden table-wrap">
         {batch.scans.length === 0 ? (
           <Empty title="No scans in this batch" />
         ) : (

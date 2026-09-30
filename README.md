@@ -58,6 +58,7 @@ python -m brandguard.api        # http://127.0.0.1:8000  (API docs at /api/docs)
 ```
 
 or, with Docker: `docker compose up --build` and open http://localhost:8000.
+How to use the console: `docs/USER_GUIDE.md`. Local operations: `docs/RUNBOOK.md`.
 To put it on a server with HTTPS for a demo others open, see `docs/DEPLOY.md`.
 
 Screens:

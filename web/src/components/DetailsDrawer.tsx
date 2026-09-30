@@ -50,7 +50,7 @@ export function DetailsDrawer({
         <div className="flex-1 overflow-auto px-5 py-4 flex flex-col gap-6">
           <Explanation finding={f} brand={brand} onBrandUpdated={onBrandUpdated} onReviewChanged={onReviewChanged} />
 
-          <section className="grid gap-3 text-sm" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <section className="grid-2 text-sm">
             <Fact label="Source" value={f.source} mono />
             <Fact
               label={f.kind === 'domain' ? 'Similarity' : 'Confidence'}

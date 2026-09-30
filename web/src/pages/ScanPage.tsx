@@ -116,7 +116,7 @@ export default function ScanPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-4">
+      <div className="page-head flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="text-xs faint mb-1">
             <Link to="/scans">Scans</Link> / {scan.id.slice(0, 8)}
@@ -132,7 +132,7 @@ export default function ScanPage() {
             {fmtDate(scan.created_at)}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="actions flex items-center gap-2 shrink-0">
           {failed.length > 0 && !live && (
             <button type="button" className="btn btn-sm" onClick={() => void retry()}>
               Retry failed sources
@@ -216,7 +216,7 @@ export default function ScanPage() {
             )}
           </div>
           {showDiff && (
-            <div className="mt-3 grid gap-4 text-xs" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="mt-3 grid-2 text-xs">
               <div>
                 <div className="label mb-1">Gone (was in the previous scan)</div>
                 {diff.gone.length === 0 ? (
@@ -257,7 +257,7 @@ export default function ScanPage() {
       <Counters counts={counts} active={tab === 'actionable' || tab === 'new' ? undefined : tab} onSelect={(c) => setTab(c)} />
 
       <div className="card">
-        <div className="flex items-center gap-3 px-3 pt-1" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="toolbar px-3 pt-1" style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="tabs flex-1" style={{ borderBottom: 0 }}>
             <button type="button" className={`tab ${tab === 'actionable' ? 'active' : ''}`} onClick={() => setTab('actionable')}>
               Needs action <span className="faint tnum ml-1">{actionable}</span>
@@ -295,7 +295,7 @@ export default function ScanPage() {
             </label>
           )}
         </div>
-        <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 380px)', minHeight: 200 }}>
+        <div className="overflow-auto findings-scroll" style={{ maxHeight: 'calc(100vh - 380px)', minHeight: 200 }}>
           {page ? (
             <FindingsTable
               items={visibleItems}
@@ -312,7 +312,7 @@ export default function ScanPage() {
         </div>
         <div className="px-4 py-2 text-xs faint flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
           <span>{page ? `${visibleItems.length} / ${page.total} findings${hideMirrors && mirrorCount ? ` (${mirrorCount} mirror copies hidden)` : ''}` : ''}{live ? ' · scan in progress' : ''}</span>
-          <span>
+          <span className="hide-sm">
             Click a row or press <span className="kbd">Enter</span> for details · <span className="kbd">▾</span> or <span className="kbd">Space</span> shows why · <span className="kbd">Esc</span> closes
           </span>
         </div>

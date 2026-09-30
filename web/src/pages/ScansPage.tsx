@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError, SOURCE_LABEL } from '../api'
-import { usePolling } from '../hooks'
+import { useMediaQuery, usePolling } from '../hooks'
 import { Counters } from '../components/Counters'
 import { Empty, Segmented, StatusPill, fmtDate } from '../ui'
 
@@ -75,6 +75,7 @@ export default function ScansPage() {
     }
   }
 
+  const phone = useMediaQuery('(max-width: 640px)')
   const total = data?.total ?? 0
   const last = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const rows = data?.items ?? []
@@ -121,13 +122,59 @@ export default function ScansPage() {
           {error}
         </div>
       )}
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden table-wrap">
         {!data ? (
           <div className="p-6 faint">Loading…</div>
         ) : total === 0 && !q && view === 'all' ? (
           <Empty title="No scans yet" body="Start by entering a brand name, its domain or its Google Play link." />
         ) : rows.length === 0 ? (
           <Empty title="Nothing matches this filter" body="Pick another filter or clear the search box." />
+        ) : phone ? (
+          <ul className="flex flex-col">
+            {rows.map((s) => {
+              const live = s.status === 'queued' || s.status === 'running'
+              return (
+                <li key={s.id} className="px-3 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/scans/${s.id}`} className="font-medium" style={{ color: 'inherit' }}>
+                      {s.brand_name}
+                    </Link>
+                    <StatusPill status={s.status} />
+                  </div>
+                  <div className="text-xs faint mono mt-0.5" style={{ overflowWrap: 'anywhere' }}>
+                    {s.input_raw}
+                  </div>
+                  <div className="text-xs faint mt-1">
+                    {s.sources.map((x) => SOURCE_LABEL[x]).join(', ')} · {s.depth} · {fmtDate(s.created_at)}
+                    {s.trigger === 'schedule' ? ' · scheduled' : ''}
+                    {s.batch_id ? (
+                      <>
+                        {' · '}
+                        <Link to={`/batches/${s.batch_id}`}>batch {s.batch_id.slice(0, 8)}</Link>
+                      </>
+                    ) : null}
+                  </div>
+                  <div className="mt-2">
+                    <Counters counts={s.counts} compact />
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Link to={`/scans/${s.id}`} className="btn btn-sm">
+                      Open →
+                    </Link>
+                    {live ? (
+                      <button type="button" className="btn btn-sm btn-danger" onClick={() => void cancel(s.id)}>
+                        Cancel
+                      </button>
+                    ) : (
+                      <button type="button" className="btn btn-sm btn-ghost" disabled={busy === s.id} onClick={() => void remove(s.id, s.brand_name)}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         ) : (
           <table className="table">
             <thead>

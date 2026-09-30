@@ -220,3 +220,44 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: min(560px, 100vw); background: var(--surface); border-left: 1px solid var(--border); box-shadow: -8px 0 24px rgba(16, 24, 40, .12); z-index: 40; display: flex; flex-direction: column; }
 .backdrop { position: fixed; inset: 0; background: rgba(16, 24, 40, .25); z-index: 30; }
+
+/* Responsive layout. Desktop is the primary surface; phones get one column,
+   scrollable tables and tabs, and a header without the health chips. */
+.layout-start { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr) 360px; }
+.layout-brand { display: grid; gap: 1.5rem; grid-template-columns: 400px minmax(0, 1fr); }
+.grid-2 { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4 { display: grid; gap: .75rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-counters { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.grid-sources { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+.table-wrap .table { min-width: 760px; }
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; }
+.toolbar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+@media (max-width: 1024px) {
+  .layout-start, .layout-brand { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  body { font-size: 13.5px; }
+  main.page { padding-left: 16px; padding-right: 16px; padding-top: 16px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .grid-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hide-sm { display: none !important; }
+  .header-inner { gap: .75rem; padding-left: 12px; padding-right: 12px; }
+  .header-nav { gap: 0 !important; }
+  .header-nav a { padding: 4px 6px !important; white-space: nowrap; font-size: 13px; }
+  .header-inner { height: 48px !important; gap: .5rem !important; }
+  .brand-word { font-size: 14px !important; gap: 6px !important; }
+  .icon-btn { width: 28px; height: 28px; }
+  .drawer { width: 100vw; }
+  .tabs { flex-wrap: wrap; overflow: visible; }
+  .findings-scroll { max-height: none !important; }
+  .page-head { flex-direction: column; align-items: stretch; }
+  .page-head .actions { justify-content: flex-start; flex-wrap: wrap; }
+  .btn { padding: 8px 12px; }
+  .table td, .table th { padding: 8px 8px; }
+}
